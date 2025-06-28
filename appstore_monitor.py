@@ -11,6 +11,7 @@ import time
 import pytz
 from datetime import datetime, timezone, timedelta
 import google.generativeai as genai
+from google.generativeai import types
 
 # 配置日志
 logging.basicConfig(
@@ -25,9 +26,11 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")  # 从环境变量获取 G
 LATEST_REPORT_FILE = "研报数据/慧博研报_最新数据.csv"  # 最新研报数据文件
 FINANCIAL_NEWS_DIR = "财经新闻数据"  # 财经新闻数据目录
 CLS_NEWS_DIR = "财联社/output/cls"  # 财联社新闻数据目录
+MARKET_DATA_DIR = "国际市场数据"  # 国际市场数据目录
 
 # 创建数据目录
 os.makedirs(FINANCIAL_NEWS_DIR, exist_ok=True)
+os.makedirs(MARKET_DATA_DIR, exist_ok=True)
 
 # 配置 Gemini API
 if GEMINI_API_KEY:
@@ -43,6 +46,7 @@ ANALYST_PROMPT = """
 1.  近期（过去一周）发布的A股券商研究报告。
 2.  最新的宏观经济数据和财经新闻。
 3.  财联社电报等实时市场资讯。
+4.  全球主要股指、大宗商品、外汇和利率等国际市场数据，包括黄金、原油、铜等大宗商品价格走势，美元指数，中美国债收益率，以及A股主要指数表现。
 
 你知道这些信息充满了"噪音"，且可能存在滞后性、片面性甚至错误。因此，你的核心价值在于 **快速过滤、精准提炼、独立思考和深度甄别**，而非简单复述。
 
@@ -52,9 +56,9 @@ ANALYST_PROMPT = """
 **分析框架 (请严格按步骤执行):**
 
 1.  **市场关键信息梳理与定调 (Market Intelligence Briefing & Tone Setting):**
-    * **此为首要步骤。** 请首先从所有参考资料（研报、新闻、电报）中，提炼出对今日乃至近期A股投资有 **重大影响** 的关键信息。
+    * **此为首要步骤。** 请首先从所有参考资料（研报、新闻、电报、国际市场数据）中，提炼出对今日乃至近期A股投资有 **重大影响** 的关键信息。
     * 将这些信息分类整理为以下三部分，并简要评估其潜在影响（利好[+]、利空[-]、中性或不确定[~]）：
-        * **宏观与政策动态:** 如重要的经济数据发布、产业政策、监管动向、国际关系等。
+        * **宏观与政策动态:** 如重要的经济数据发布、产业政策、监管动向、国际关系等。特别关注国际市场分析中提供的全球市场情绪指标，如VIX指数、美元指数等。
         * **产业与科技前沿:** 如关键技术突破（如固态电池、AI模型）、产业链价格异动、重要行业会议结论等。**特别关注：重要商品期货（如原油、铜、黄金）及工业原料（如锂、稀土）、中美国债利率的价格趋势，并分析其对上下游产业链（如采掘、冶炼、制造、化工）的成本和利润传导效应。**
         * **焦点公司与市场异动:** 如龙头公司的重大合同、业绩预警/预喜、并购重组、以及市场普遍关注的突发新闻。
 
@@ -119,6 +123,9 @@ ANALYST_PROMPT = """
 
 ## 3. 财联社电报
 {cls_news}
+
+## 4. 国际市场分析
+{market_analysis}
 """
 
 def get_china_time():
@@ -263,7 +270,47 @@ def load_cls_news():
         logging.error(f"加载财联社新闻数据失败: {str(e)}")
         return "加载财联社新闻数据失败"
 
-def generate_comprehensive_analysis(reports_data, financial_news, cls_news):
+def load_market_data():
+    """加载最新的国际市场数据"""
+    try:
+        # 尝试加载最新的市场数据和分析
+        market_data_file = os.path.join(MARKET_DATA_DIR, "global_market_data_latest.json")
+        market_analysis_file = os.path.join(MARKET_DATA_DIR, "market_analysis_" + get_china_time().strftime('%Y-%m-%d') + ".md")
+        
+        market_data = None
+        market_analysis = None
+        
+        # 加载市场数据
+        if os.path.exists(market_data_file):
+            with open(market_data_file, 'r', encoding='utf-8') as f:
+                market_data = json.load(f)
+            logging.info(f"成功加载国际市场数据")
+        else:
+            logging.warning(f"国际市场数据文件 {market_data_file} 不存在")
+        
+        # 加载市场分析
+        if os.path.exists(market_analysis_file):
+            with open(market_analysis_file, 'r', encoding='utf-8') as f:
+                market_analysis = f.read()
+            logging.info(f"成功加载国际市场分析")
+        else:
+            # 尝试查找最近的分析文件
+            analysis_files = [f for f in os.listdir(MARKET_DATA_DIR) if f.startswith("market_analysis_") and f.endswith(".md")]
+            if analysis_files:
+                # 按日期排序，获取最新的
+                latest_file = sorted(analysis_files)[-1]
+                with open(os.path.join(MARKET_DATA_DIR, latest_file), 'r', encoding='utf-8') as f:
+                    market_analysis = f.read()
+                logging.info(f"成功加载最近的国际市场分析: {latest_file}")
+            else:
+                logging.warning("未找到任何国际市场分析文件")
+        
+        return market_data, market_analysis
+    except Exception as e:
+        logging.error(f"加载国际市场数据失败: {e}")
+        return None, None
+
+def generate_comprehensive_analysis(reports_data, financial_news, cls_news, market_analysis):
     """使用 Gemini 模型生成综合分析报告"""
     if not GEMINI_API_KEY:
         logging.warning("未设置 Gemini API KEY，跳过生成分析")
@@ -284,12 +331,23 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news):
             reports_data=reports_data,
             financial_news=financial_news,
             cls_news=cls_news,
-            current_time=current_time
+            current_time=current_time,
+            market_analysis=market_analysis
         )
         
-        # 生成分析
-        logging.info("开始使用 Gemini 生成综合分析...")
-        response = model.generate_content(prompt)
+        # 生成分析，启用思考模式
+        logging.info("开始使用 Gemini 生成综合分析（启用思考模式）...")
+        
+        # 配置思考模式
+        generation_config = genai.types.GenerateContentConfig(
+            thinking_config=genai.types.ThinkingConfig(thinking_budget=1.0)  # 启用思考模式，预算设为1.0
+        )
+        
+        # 使用思考模式生成内容
+        response = model.generate_content(
+            prompt,
+            generation_config=generation_config
+        )
         
         if response and hasattr(response, 'text'):
             logging.info("成功生成综合分析")
@@ -338,8 +396,12 @@ def process_all_data():
     # 加载财联社新闻数据
     cls_news = load_cls_news()
     
+    # 加载国际市场数据
+    market_data, market_analysis = load_market_data()
+    market_analysis = market_analysis or "暂无国际市场分析数据"
+    
     # 生成综合分析
-    analysis = generate_comprehensive_analysis(reports_data, financial_news, cls_news)
+    analysis = generate_comprehensive_analysis(reports_data, financial_news, cls_news, market_analysis)
     
     # 发送分析报告
     if analysis:

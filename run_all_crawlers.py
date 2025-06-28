@@ -67,6 +67,20 @@ def run_cls_crawler():
         logging.error(f"运行财联社爬虫时出错: {e}")
         return False
 
+def run_market_data_collector():
+    """运行国际市场数据收集器"""
+    logging.info("开始运行国际市场数据收集器...")
+    try:
+        # 导入国际市场数据收集模块
+        market_module = import_module_from_file("AKShareSummer.py", "market_collector")
+        # 运行市场分析函数
+        market_module.run_market_analysis()
+        logging.info("国际市场数据收集器运行完成")
+        return True
+    except Exception as e:
+        logging.error(f"运行国际市场数据收集器时出错: {e}")
+        return False
+
 def run_ai_analysis():
     """运行AI分析"""
     logging.info("开始运行AI分析...")
@@ -98,20 +112,25 @@ def main():
     cls_success = run_cls_crawler()
     time.sleep(2)  # 短暂暂停
     
-    # 4. 如果至少有一个爬虫成功，则运行AI分析
-    if hibor_success or news_success or cls_success:
+    # 4. 运行国际市场数据收集器
+    market_success = run_market_data_collector()
+    time.sleep(2)  # 短暂暂停
+    
+    # 5. 如果至少有一个爬虫成功，则运行AI分析
+    if hibor_success or news_success or cls_success or market_success:
         ai_success = run_ai_analysis()
     else:
         logging.error("所有爬虫均失败，跳过AI分析")
         ai_success = False
     
-    # 5. 输出总结
+    # 6. 输出总结
     end_time = datetime.now()
     duration = end_time - start_time
     logging.info(f"=== 全部任务完成 === 耗时: {duration}")
     logging.info(f"慧博研报爬虫: {'成功' if hibor_success else '失败'}")
     logging.info(f"财经新闻爬虫: {'成功' if news_success else '失败'}")
     logging.info(f"财联社爬虫: {'成功' if cls_success else '失败'}")
+    logging.info(f"国际市场数据收集: {'成功' if market_success else '失败'}")
     logging.info(f"AI分析: {'成功' if ai_success else '失败'}")
 
 if __name__ == "__main__":
