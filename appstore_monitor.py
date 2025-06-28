@@ -335,15 +335,18 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news, mark
             market_analysis=market_analysis
         )
         
-        # 生成分析，启用思考模式
-        logging.info("开始使用 Gemini 生成综合分析（启用思考模式）...")
+        # 生成分析
+        logging.info("开始使用 Gemini 生成综合分析...")
         
-        # 配置思考模式
-        generation_config = genai.types.GenerateContentConfig(
-            thinking_config=genai.types.ThinkingConfig(thinking_budget=1.0)  # 启用思考模式，预算设为1.0
-        )
+        # 配置生成参数
+        generation_config = {
+            "temperature": 0.7,
+            "top_p": 1.0,
+            "top_k": 32,
+            "max_output_tokens": 4096,
+        }
         
-        # 使用思考模式生成内容
+        # 生成内容
         response = model.generate_content(
             prompt,
             generation_config=generation_config

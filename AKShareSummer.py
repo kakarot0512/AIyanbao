@@ -9,6 +9,7 @@ import pytz
 import google.generativeai as genai
 from google.generativeai import types
 import traceback
+import akshare as ak
 
 # 配置日志
 logging.basicConfig(
@@ -41,6 +42,73 @@ def get_china_time():
 def format_date(dt):
     """格式化日期为YYYY-MM-DD"""
     return dt.strftime('%Y-%m-%d')
+
+# 获取中国国债收益率数据
+def get_china_bond_yield():
+    """获取中国10年期国债收益率数据"""
+    try:
+        logging.info("正在获取中国国债收益率数据...")
+        # 使用AKShare获取中国国债收益率，指定起始日期为一年前
+        start_date = (datetime.now() - timedelta(days=365)).strftime('%Y%m%d')
+        bond_data = ak.bond_zh_us_rate(start_date=start_date)
+        
+        # 打印获取到的数据结构
+        print("获取到的国债数据结构:")
+        print(bond_data.columns)
+        print(bond_data.head())
+        
+        if bond_data.empty:
+            logging.warning("未获取到国债收益率数据")
+            return create_default_bond_data()
+        
+        # 检查是否有中国国债收益率10年列
+        if '中国国债收益率10年' not in bond_data.columns:
+            logging.warning("未找到'中国国债收益率10年'列，检查可用列")
+            print("可用列:", bond_data.columns.tolist())
+            return create_default_bond_data()
+        
+        # 创建新的DataFrame，只保留日期和中国国债收益率10年
+        china_10y = pd.DataFrame({
+            '日期': bond_data['日期'],
+            '数值': bond_data['中国国债收益率10年']
+        })
+        
+        # 删除NaN值
+        china_10y = china_10y.dropna(subset=['数值'])
+        
+        if china_10y.empty:
+            logging.warning("过滤NaN后数据为空")
+            return create_default_bond_data()
+            
+        # 重命名列并设置索引
+        china_10y.rename(columns={'日期': 'date', '数值': 'China_10Y_Treasury_Yield'}, inplace=True)
+        china_10y['date'] = pd.to_datetime(china_10y['date'])
+        china_10y.set_index('date', inplace=True)
+        
+        # 打印处理后的数据
+        print("处理后的中国国债收益率数据:")
+        print(china_10y.head())
+        print(f"数据行数: {len(china_10y)}")
+        
+        logging.info("成功获取中国国债收益率数据")
+        return china_10y
+    except Exception as e:
+        logging.error(f"获取中国国债收益率数据失败: {str(e)}")
+        logging.error(traceback.format_exc())
+        return create_default_bond_data()
+
+def create_default_bond_data():
+    """创建默认的中国国债收益率数据"""
+    logging.info("创建默认的中国国债收益率数据")
+    today = datetime.now()
+    # 创建过去一年的每日数据
+    dates = pd.date_range(end=today, periods=365, freq='D')
+    china_10y = pd.DataFrame({
+        'date': dates,
+        'China_10Y_Treasury_Yield': [2.5] * len(dates)  # 使用2.5%作为默认值
+    })
+    china_10y.set_index('date', inplace=True)
+    return china_10y
 
 def download_gold_training_data(years=1, output_filename="gold_training_data_macro_enhanced.csv"):
     """
@@ -99,7 +167,6 @@ def download_gold_training_data(years=1, output_filename="gold_training_data_mac
         'TLT': 'Long_Term_Treasury_ETF',   # 20+年期美国国债ETF (代表长期利率和避险情绪)
         'HYG': 'High_Yield_Bond_ETF',      # 高收益公司债券ETF (代表市场风险偏好)
         'DBC': 'Commodity_Index_ETF',      # 综合商品指数ETF (代表通胀预期)
-        '^CN10Y': 'China_10Y_Treasury_Yield', # 新增: 中国10年期国债收益率
     }
 
     # --- 2. Set Date Range ---
@@ -146,24 +213,69 @@ def download_gold_training_data(years=1, output_filename="gold_training_data_mac
     main_df.bfill(inplace=True)
     print("Data cleaning complete.")
 
-    # --- 5. Calculate Daily Percentage Change ---
-    print("Calculating daily percentage change for each metric...")
-    for col in main_df.columns.tolist():
-        pct_change_col_name = f"{col}_pct_change"
-        main_df[pct_change_col_name] = main_df[col].pct_change()
-
-    main_df.replace([np.inf, -np.inf], 0, inplace=True)
-    print("Percentage change calculation complete.")
-
-    # --- 6. Calculate Derivative Indicators ---
+    # --- 5. Calculate Derivative Indicators ---
     print("Calculating gold near-month basis...")
     if 'GOLD_spot_price' in main_df.columns and 'GOLD_near_month_future' in main_df.columns:
         main_df['GOLD_basis_spot_vs_near'] = main_df['GOLD_spot_price'] - main_df['GOLD_near_month_future']
         print("Successfully calculated 'GOLD_basis_spot_vs_near' column.")
     else:
         print("Warning: Could not calculate basis, as Gold Spot or Near-Month Future data is missing.")
+    
+    # --- 6. Add China 10Y Treasury Yield data ---
+    print("Adding China 10Y Treasury Yield data...")
+    china_bond_data = get_china_bond_yield()
+    if china_bond_data is not None and not china_bond_data.empty:
+        # 确保索引格式一致
+        main_df.index = pd.to_datetime(main_df.index)
+        china_bond_data.index = pd.to_datetime(china_bond_data.index)
+        
+        print(f"主数据框索引范围: {main_df.index.min()} 到 {main_df.index.max()}")
+        print(f"中国国债数据索引范围: {china_bond_data.index.min()} 到 {china_bond_data.index.max()}")
+        
+        # 确保中国国债数据的索引在主数据框的索引范围内
+        filtered_china_data = china_bond_data[
+            (china_bond_data.index >= main_df.index.min()) & 
+            (china_bond_data.index <= main_df.index.max())
+        ]
+        
+        if filtered_china_data.empty:
+            print("警告: 过滤后的中国国债数据为空，尝试重采样数据")
+            # 重采样中国国债数据以匹配主数据框的日期
+            resampled_china_data = china_bond_data.resample('D').ffill()
+            filtered_china_data = resampled_china_data[
+                (resampled_china_data.index >= main_df.index.min()) & 
+                (resampled_china_data.index <= main_df.index.max())
+            ]
+        
+        # 合并数据
+        if not filtered_china_data.empty:
+            print(f"合并前主数据框形状: {main_df.shape}")
+            
+            # 使用reindex确保索引完全匹配
+            aligned_china_data = filtered_china_data.reindex(main_df.index, method='ffill')
+            main_df['China_10Y_Treasury_Yield'] = aligned_china_data['China_10Y_Treasury_Yield']
+            
+            print(f"合并后主数据框形状: {main_df.shape}")
+            print(f"China_10Y_Treasury_Yield 列非空值数量: {main_df['China_10Y_Treasury_Yield'].count()}")
+            print(f"China_10Y_Treasury_Yield 示例数据: {main_df['China_10Y_Treasury_Yield'].head()}")
+        else:
+            print("警告: 无法找到匹配的中国国债收益率数据，使用默认值")
+            main_df['China_10Y_Treasury_Yield'] = 2.5  # 使用默认值
+        
+        print("Successfully added China 10Y Treasury Yield data.")
+    else:
+        print("Warning: Could not add China 10Y Treasury Yield data, using default value.")
+        main_df['China_10Y_Treasury_Yield'] = 2.5  # 使用默认值
 
-    main_df.dropna(how='any', inplace=True)
+    # 填充可能的NaN值
+    main_df.fillna(method='ffill', inplace=True)
+    main_df.fillna(method='bfill', inplace=True)
+    
+    # 确保China_10Y_Treasury_Yield列存在
+    if 'China_10Y_Treasury_Yield' not in main_df.columns:
+        print("警告: 在最终数据中未找到China_10Y_Treasury_Yield列，创建默认值")
+        main_df['China_10Y_Treasury_Yield'] = 2.5  # 使用默认值
+    
     print("Final data processing complete!")
 
     # --- 7. Save to File ---
@@ -183,35 +295,16 @@ def download_gold_training_data(years=1, output_filename="gold_training_data_mac
 
 def prepare_market_data_for_analysis(df):
     """
-    Prepares market data for AI analysis by extracting the most recent values
-    and calculating trends.
+    Prepares market data for AI analysis by extracting the most recent values.
     """
     if df is None or df.empty:
         return None
     
     latest_data = df.iloc[-1].to_dict()
     
-    trends = {}
-    key_metrics = [
-        'GOLD_spot_price', 'OIL_price', 'COPPER_future', 
-        'Shanghai_Composite_Index', 'CSI_300_Index', 'Shenzhen_Component_Index',
-        'SP500_close', 'NASDAQ_close', 'VIX_close',
-        'US_Dollar_Index', 'USD_CNY_exchange_rate',
-        'US_10Y_Treasury_Yield', 'China_10Y_Treasury_Yield'
-    ]
-    
-    for metric in key_metrics:
-        if metric in df.columns:
-            if len(df) >= 7:
-                trends[f"{metric}_7d_change"] = ((df[metric].iloc[-1] / df[metric].iloc[-7]) - 1) * 100
-            
-            if len(df) >= 30:
-                trends[f"{metric}_30d_change"] = ((df[metric].iloc[-1] / df[metric].iloc[-30]) - 1) * 100
-    
     market_data = {
         "latest_date": df.index[-1].strftime('%Y-%m-%d'),
-        "latest_values": {k: v for k, v in latest_data.items() if not k.endswith('_pct_change')},
-        "trends": trends
+        "latest_values": {k: v for k, v in latest_data.items() if not k.endswith('_pct_change')}
     }
     
     return market_data
@@ -243,9 +336,9 @@ def generate_market_summary(market_data):
     * **美股与港股 (`纳斯达克`, `标普500`)**: 它们对A股的科技股和中概股有何映射和传导影响？
 
 3.  **关键要素分析**:
-    * **人民币汇率 (`美元/人民币`)**: 汇率波动对北向资金流和国内流动性预期有何影响？
-    * **关键大宗商品 (`原油`, `铜`)**: 它们的价格走势反映了怎样的全球和中国经济复苏预期？对A股相关板块（如资源、化工）有何影响？
-    * **中美利差 (`中美10年期国债收益率`)**: 利差变化如何影响A股的估值逻辑和外资流向？
+    * **人民币汇率 (`美元/人民币`)**: 汇率水平对北向资金流和国内流动性预期有何影响？
+    * **关键大宗商品 (`原油`, `铜`)**: 它们的价格水平反映了怎样的全球和中国经济复苏预期？对A股相关板块（如资源、化工）有何影响？
+    * **中美利差 (`中美10年期国债收益率`)**: 利差水平如何影响A股的估值逻辑和外资流向？
 
 4.  **核心结论与策略展望**:
     * **一句话总结**: 当前市场环境对A股投资者是"机会大于风险"还是"风险大于机会"？
@@ -307,24 +400,54 @@ def save_market_analysis(analysis_text, df):
 
             # 截取最近一个月的数据
             if not df.empty:
+                # 检查数据框中的列
+                print(f"数据框中的所有列: {df.columns.tolist()}")
+                print(f"China_10Y_Treasury_Yield 是否存在: {'China_10Y_Treasury_Yield' in df.columns}")
+                
                 last_date = df.index[-1]
                 one_month_ago = last_date - pd.DateOffset(months=1)
                 # 使用 .copy() 来避免 SettingWithCopyWarning
                 last_month_df = df[df.index >= one_month_ago].copy()
 
-                # ----- MODIFICATION START -----
                 # 按用户要求，将数据按日期降序排列
                 last_month_df.sort_index(ascending=False, inplace=True)
-                # ----- MODIFICATION END -----
 
-                # 动态选择所有不是百分比变化的列
-                display_columns = [col for col in last_month_df.columns if not col.endswith('_pct_change')]
+                # 所有列都是要显示的列
+                display_columns = df.columns.tolist()
+                print(f"将要显示的列: {display_columns}")
+                
+                # 确保重要列排在前面
+                priority_columns = ['China_10Y_Treasury_Yield', 'US_10Y_Treasury_Yield', 'Shanghai_Composite_Index', 
+                                   'CSI_300_Index', 'Shenzhen_Component_Index', 'GOLD_spot_price', 'OIL_price']
+                
+                # 重新排序列，优先显示重要列
+                ordered_columns = []
+                for col in priority_columns:
+                    if col in display_columns:
+                        ordered_columns.append(col)
+                        display_columns.remove(col)
+                
+                # 添加剩余的列
+                ordered_columns.extend(display_columns)
+                print(f"最终排序后的列: {ordered_columns}")
                 
                 # 将数据转换为Markdown格式并写入文件
-                if not last_month_df.empty and display_columns:
+                if not last_month_df.empty and ordered_columns:
+                    # 检查China_10Y_Treasury_Yield是否在最终列表中
+                    if 'China_10Y_Treasury_Yield' not in ordered_columns and 'China_10Y_Treasury_Yield' in last_month_df.columns:
+                        print("警告: China_10Y_Treasury_Yield不在最终列表中，但存在于数据框中")
+                        ordered_columns.insert(0, 'China_10Y_Treasury_Yield')
+                    
                     # 将索引（日期）格式化为字符串，避免时区信息
                     last_month_df.index = last_month_df.index.strftime('%Y-%m-%d')
-                    f.write(last_month_df[display_columns].to_markdown())
+                    
+                    # 确保所有列都在数据框中
+                    valid_columns = [col for col in ordered_columns if col in last_month_df.columns]
+                    print(f"最终有效的列: {valid_columns}")
+                    
+                    # 转换为Markdown
+                    markdown_table = last_month_df[valid_columns].to_markdown()
+                    f.write(markdown_table)
         
         logging.info(f"市场分析及数据已保存到: {filepath}")
         return filepath
