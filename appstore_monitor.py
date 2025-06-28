@@ -36,7 +36,7 @@ if GEMINI_API_KEY:
 # 综合分析师角色描述
 ANALYST_PROMPT = """
 # 角色
-你是一位拥有15年经验的中国A股基金经理和首席投资策略分析师，尤其擅长从海量、混杂的券商研报、财经新闻和实时资讯中，通过交叉验证和逻辑推演，挖掘出具备“预期差”和高成长潜力的投资机会。
+你是一位拥有15年经验的中国A股基金经理和首席投资策略分析师，尤其擅长从海量、混杂的券商研报、财经新闻和实时资讯中，通过交叉验证和逻辑推演，挖掘出潜在的投资机会。
 
 # 背景
 当前时间为2025年6月28日清晨，A股开盘前。你正在进行投研晨会前的准备工作。你的信息源包括：
@@ -44,18 +44,18 @@ ANALYST_PROMPT = """
 2.  最新的宏观经济数据和财经新闻。
 3.  财联社电报等实时市场资讯。
 
-你知道这些信息充满了“噪音”，且可能存在滞后性、片面性甚至错误。因此，你的核心价值在于 **快速过滤、精准提炼、独立思考和深度甄别**，而非简单复述。
+你知道这些信息充满了"噪音"，且可能存在滞后性、片面性甚至错误。因此，你的核心价值在于 **快速过滤、精准提炼、独立思考和深度甄别**，而非简单复述。
 
 # 任务
-请你基于下面提供的参考资料，严格遵循以下 **“投研晨会”** 的分析框架，为我构建并详细阐述一个由8-12只A股组成的【高成长潜力模拟投资组合】。
+请你基于下面提供的参考资料，严格遵循以下 **"投研晨会"** 的分析框架，为我构建并详细阐述一个由8-12只A股组成的【高成长潜力模拟投资组合】。
 
 **分析框架 (请严格按步骤执行):**
 
 1.  **市场关键信息梳理与定调 (Market Intelligence Briefing & Tone Setting):**
     * **此为首要步骤。** 请首先从所有参考资料（研报、新闻、电报）中，提炼出对今日乃至近期A股投资有 **重大影响** 的关键信息。
     * 将这些信息分类整理为以下三部分，并简要评估其潜在影响（利好[+]、利空[-]、中性或不确定[~]）：
-        * **宏观与政策动态:** 如重要的经济数据发布、产业政策（如“以旧换新”补贴）、监管动向、国际关系等。
-        * **产业与科技前沿:** 如关键技术突破（如固态电池、AI模型）、产业链价格异动、重要行业会议结论等。
+        * **宏观与政策动态:** 如重要的经济数据发布、产业政策、监管动向、国际关系等。
+        * **产业与科技前沿:** 如关键技术突破（如固态电池、AI模型）、产业链价格异动、重要行业会议结论等。**特别关注：重要商品期货（如原油、铜、黄金）及工业原料（如锂、稀土）、中美国债利率的价格趋势，并分析其对上下游产业链（如采掘、冶炼、制造、化工）的成本和利润传导效应。**
         * **焦点公司与市场异动:** 如龙头公司的重大合同、业绩预警/预喜、并购重组、以及市场普遍关注的突发新闻。
 
 2.  **核心投资主题识别 (Theme Identification):**
@@ -63,7 +63,7 @@ ANALYST_PROMPT = """
     * 每个主题需用一句话阐明其核心逻辑（例如：AI算力需求爆发，带动上游硬件产业链景气度持续提升）。
 
 3.  **多源交叉验证与个股筛选 (Cross-Validation & Stock Screening):**
-    * 在识别出的每个核心主题下，筛选出被 **至少2家或以上不同券商** 同时给予“买入”、“增持”或同等正面评级的个股。
+    * 在识别出的每个核心主题下，筛选出被 **至少2家或以上不同券商** 同时给予"买入"、"增持"或同等正面评级的个股。
     * 结合第一步整理的最新新闻，对候选公司进行二次验证，剔除存在潜在重大利空信息的公司，形成最终候选池。
 
 4.  **个股深度剖析 (Deep Dive Analysis):**
@@ -75,7 +75,7 @@ ANALYST_PROMPT = """
 5.  **投资组合构建与风险管理 (Portfolio Construction & Risk Management):**
     * 最终构建一个包含8-12只股票的投资组合。
     * 组合内应适当分散，覆盖你识别出的主要核心主题，避免在单一赛道上过度集中。
-    * 为每只入选的股票，明确其在组合中的定位（例如：“核心配置”代表逻辑最强、确定性高；“卫星配置”代表弹性较大、属于博取更高收益的部分）。
+    * 为每只入选的股票，明确其在组合中的定位（例如："核心配置"代表逻辑最强、确定性高；"卫星配置"代表弹性较大、属于博取更高收益的部分）。
 
 **输出格式 (请严格按照以下结构呈现):**
 
@@ -205,24 +205,60 @@ def load_financial_news():
         return "加载财经新闻数据失败"
 
 def load_cls_news():
-    """加载最新的财联社新闻数据"""
+    """加载当前周和上一周的财联社新闻数据"""
     try:
-        # 获取当前周的文件
+        # 获取当前周和上一周的信息
         current_date = datetime.now()
-        week_str = f"{current_date.year}-W{current_date.isocalendar()[1]:02d}"
+        current_week_num = current_date.isocalendar()[1]
+        current_year = current_date.year
         
-        # 构建文件路径
-        file_path = os.path.join(CLS_NEWS_DIR, f"cls_{week_str}.md")
+        # 计算上一周的周数和年份
+        prev_week_date = current_date - timedelta(days=7)
+        prev_week_num = prev_week_date.isocalendar()[1]
+        prev_year = prev_week_date.year
         
-        if os.path.exists(file_path):
-            # 读取文件内容
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            logging.info(f"成功加载财联社新闻数据文件")
-            return content
+        # 构建当前周和上一周的文件路径
+        current_week_str = f"{current_year}-W{current_week_num:02d}"
+        prev_week_str = f"{prev_year}-W{prev_week_num:02d}"
+        
+        current_file_path = os.path.join(CLS_NEWS_DIR, f"cls_{current_week_str}.md")
+        prev_file_path = os.path.join(CLS_NEWS_DIR, f"cls_{prev_week_str}.md")
+        
+        # 初始化内容变量
+        current_week_content = ""
+        prev_week_content = ""
+        
+        # 尝试读取当前周的数据
+        if os.path.exists(current_file_path):
+            with open(current_file_path, 'r', encoding='utf-8') as f:
+                current_week_content = f.read()
+            logging.info(f"成功加载当前周 ({current_week_str}) 财联社新闻数据")
         else:
-            logging.warning(f"财联社新闻数据文件 {file_path} 不存在")
+            logging.warning(f"当前周 ({current_week_str}) 财联社新闻数据文件不存在")
+        
+        # 尝试读取上一周的数据
+        if os.path.exists(prev_file_path):
+            with open(prev_file_path, 'r', encoding='utf-8') as f:
+                prev_week_content = f.read()
+            logging.info(f"成功加载上一周 ({prev_week_str}) 财联社新闻数据")
+        else:
+            logging.warning(f"上一周 ({prev_week_str}) 财联社新闻数据文件不存在")
+        
+        # 组合两周的数据
+        combined_content = ""
+        
+        if current_week_content:
+            combined_content += f"# 当前周 ({current_week_str}) 财联社电报\n\n{current_week_content}\n\n"
+            
+        if prev_week_content:
+            combined_content += f"# 上一周 ({prev_week_str}) 财联社电报\n\n{prev_week_content}"
+        
+        # 如果两周都没有数据，返回提示信息
+        if not combined_content:
             return "暂无财联社新闻数据"
+            
+        return combined_content
+        
     except Exception as e:
         logging.error(f"加载财联社新闻数据失败: {str(e)}")
         return "加载财联社新闻数据失败"
