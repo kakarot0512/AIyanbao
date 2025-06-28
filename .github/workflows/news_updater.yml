@@ -1,0 +1,73 @@
+name: 每日财经新闻自动更新
+
+on:
+  # 使用 cron 语法，每小时运行一次
+  schedule:
+    - cron: '0 * * * *'
+  # 也允许手动触发
+  workflow_dispatch:
+
+jobs:
+  update-news:
+    runs-on: ubuntu-latest
+    steps:
+      # 第一步：下载你的仓库代码到虚拟环境中
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          # 获取完整历史记录以确保我们能获取到之前的数据文件
+          fetch-depth: 0
+
+      # 第二步：设置Python环境
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # 第三步：安装Python脚本所需的依赖库
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install akshare pandas
+
+      # 第四步：运行你的Python脚本来获取和处理新闻
+      - name: Run news scraper script
+        run: python 慧博研报爬虫整合版.py # 更新为正确的脚本名称
+
+      # 第五步：如果文件有变动，则自动提交回仓库
+      - name: Commit and push if changed
+        run: |
+          # 配置Git用户信息
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # 获取当前年月以构建文件名
+          YEAR_MONTH=$(date +'%Y-%m')
+          MONTH_FILE="financial_news_archive-${YEAR_MONTH}.csv"
+          
+          # 将变动（即更新后的csv文件）添加到暂存区
+          git add "financial_news_*.csv"
+          
+          # 检查是否有变动
+          git diff --staged --quiet || {
+            # 先获取远程变更
+            git fetch origin main
+            
+            # 保存当前的修改
+            git stash
+            
+            # 拉取最新更改
+            git pull --rebase origin main
+            
+            # 恢复之前的修改
+            git stash pop || true
+            
+            # 重新添加文件
+            git add "financial_news_*.csv"
+            
+            # 提交更改
+            git commit -m "财经新闻自动更新 $(date +'%Y-%m-%d %H:%M:%S')"
+            
+            # 将提交推送到你的仓库，如果失败则尝试强制推送
+            git push || git push --force
+          }
