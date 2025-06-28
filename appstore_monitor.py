@@ -339,17 +339,10 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news, mark
         logging.info("开始使用 Gemini 生成综合分析...")
         
         # 配置生成参数
-        generation_config = {
-            "temperature": 0.7,
-            "top_p": 1.0,
-            "top_k": 32,
-            "max_output_tokens": 4096,
-        }
-        
+     
         # 生成内容
         response = model.generate_content(
             prompt,
-            generation_config=generation_config
         )
         
         if response and hasattr(response, 'text'):
