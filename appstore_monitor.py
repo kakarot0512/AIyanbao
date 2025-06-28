@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import requests
@@ -176,8 +176,8 @@ def load_research_reports():
 def load_financial_news():
     """加载最新的财经新闻数据"""
     try:
-        # 获取当前年月
-        current_date = datetime.now()
+        # 获取当前年月（使用中国时间）
+        current_date = get_china_time()
         current_year = current_date.year
         current_month = current_date.month
         
@@ -207,8 +207,8 @@ def load_financial_news():
 def load_cls_news():
     """加载当前周和上一周的财联社新闻数据"""
     try:
-        # 获取当前周和上一周的信息
-        current_date = datetime.now()
+        # 获取当前周和上一周的信息（使用中国时间）
+        current_date = get_china_time()
         current_week_num = current_date.isocalendar()[1]
         current_year = current_date.year
         
@@ -273,8 +273,11 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news):
         # 使用 Gemini 模型
         model = genai.GenerativeModel('gemini-2.5-flash')
         
-        # 获取当前时间格式化字符串
-        current_time = datetime.now().strftime('%Y年%m月%d日 %H:%M')
+        # 获取当前中国时间格式化字符串，包含星期
+        china_time = get_china_time()
+        weekday_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+        weekday = weekday_names[china_time.weekday()]
+        current_time = f"{china_time.strftime('%Y年%m月%d日 %H:%M')} {weekday}"
         
         # 准备提示词
         prompt = ANALYST_PROMPT.format(
