@@ -359,17 +359,11 @@ def generate_market_summary(market_data):
 - **输出格式**: Markdown格式，使用适当的标题层级和列表。
 """
 
-        generation_config = {
-            "temperature": 0.7,
-            "top_p": 1.0,
-            "top_k": 32,
-            "max_output_tokens": 4096,
-        }
+ 
         
         logging.info("正在使用Gemini AI生成市场分析...")
         response = model.generate_content(
             prompt,
-            generation_config=generation_config
         )
         
         if response and hasattr(response, 'text'):
