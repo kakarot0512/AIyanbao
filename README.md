@@ -25,11 +25,11 @@
 
 1. `GEMINI_API_KEY`: Google Gemini API密钥
    - 获取方法：访问 https://ai.google.dev/ 注册并创建API密钥
-   - 示例值：`AIzaSyDN5gaSQjFUTSRQGHc3OuGpFpIPsvu3H2U`
+
 
 2. `FANGTANG_KEY`: 方糖推送密钥
    - 获取方法：访问 https://sct.ftqq.com/ 注册并获取推送密钥
-   - 示例值：`SCT270927TX8nSH8d7ncObAsXlFrcIJXtl`
+
 
 ## 本地运行
 
