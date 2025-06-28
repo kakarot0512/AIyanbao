@@ -1,4 +1,4 @@
-name: 慧博研报数据自动更新与AI分析
+name: 投资数据综合采集与AI分析
 
 on:
   # 使用 cron 语法，每小时运行一次 (UTC时间)
@@ -8,25 +8,35 @@ on:
   workflow_dispatch:
 
 jobs:
-  update-reports:
+  update-data:
     runs-on: ubuntu-latest
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       FANGTANG_KEY: ${{ secrets.FANGTANG_KEY }}
     steps:
-      # 第一步：下载仓库代码
+      # 第一步：检查环境变量
+      - name: Check environment variables
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "警告: GEMINI_API_KEY 未设置，AI分析将无法进行"
+          fi
+          if [ -z "$FANGTANG_KEY" ]; then
+            echo "警告: FANGTANG_KEY 未设置，推送将无法进行"
+          fi
+
+      # 第二步：下载仓库代码
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # 第二步：设置Python环境
+      # 第三步：设置Python环境
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # 第三步：安装Chrome浏览器
+      # 第四步：安装Chrome浏览器
       - name: Install Chrome
         run: |
           wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
@@ -34,27 +44,33 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
 
-      # 第四步：安装Python依赖
+      # 第五步：安装Python依赖
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas beautifulsoup4 undetected-chromedriver selenium google-generativeai
+          pip install pandas beautifulsoup4 undetected-chromedriver selenium google-generativeai requests akshare pytz
 
-      # 第五步：运行爬虫脚本获取研报数据
-      - name: Run hibor scraper script
-        run: python 慧博研报爬虫整合版.py
+      # 第六步：创建必要的目录
+      - name: Create directories
+        run: |
+          mkdir -p 研报数据
+          mkdir -p 财经新闻数据
+          mkdir -p 财联社/output/cls
 
-      # 第六步：运行AI分析脚本生成研报摘要并推送
-      - name: Run report analysis
-        run: python appstore_monitor.py
+      # 第七步：运行综合爬虫和分析脚本
+      - name: Run all crawlers and analysis
+        run: python run_all_crawlers.py
+        continue-on-error: true
 
-      # 第七步：提交更新的数据文件
+      # 第八步：提交更新的数据文件
       - name: Commit and push if changed
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
           git add "研报数据/*.csv"
+          git add "财经新闻数据/*.csv"
+          git add "财联社/output/cls/*.md"
           
           git diff --staged --quiet || {
             git fetch origin main
@@ -62,6 +78,8 @@ jobs:
             git pull --rebase origin main
             git stash pop || true
             git add "研报数据/*.csv"
-            git commit -m "慧博研报数据自动更新 $(date +'%Y-%m-%d %H:%M:%S')"
+            git add "财经新闻数据/*.csv"
+            git add "财联社/output/cls/*.md"
+            git commit -m "数据自动更新 $(date +'%Y-%m-%d %H:%M:%S')"
             git push || git push --force
           }
