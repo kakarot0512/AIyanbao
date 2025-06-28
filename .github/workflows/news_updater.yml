@@ -1,4 +1,4 @@
-name: 慧博研报数据自动更新
+name: 慧博研报数据自动更新与AI分析
 
 on:
   # 使用 cron 语法，每小时运行一次 (UTC时间)
@@ -14,11 +14,10 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       FANGTANG_KEY: ${{ secrets.FANGTANG_KEY }}
     steps:
-      # 第一步：下载你的仓库代码到虚拟环境中
+      # 第一步：下载仓库代码
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          # 获取完整历史记录以确保我们能获取到之前的数据文件
           fetch-depth: 0
 
       # 第二步：设置Python环境
@@ -35,50 +34,34 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
 
-      # 第四步：安装Python脚本所需的依赖库
+      # 第四步：安装Python依赖
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pandas beautifulsoup4 undetected-chromedriver selenium google-generativeai
 
-      # 第五步：运行爬虫脚本来获取研报数据
+      # 第五步：运行爬虫脚本获取研报数据
       - name: Run hibor scraper script
         run: python 慧博研报爬虫整合版.py
 
       # 第六步：运行AI分析脚本生成研报摘要并推送
       - name: Run report analysis
-        run: python appstore_monitor.py --reports
+        run: python appstore_monitor.py
 
-      # 第七步：如果文件有变动，则自动提交回仓库
+      # 第七步：提交更新的数据文件
       - name: Commit and push if changed
         run: |
-          # 配置Git用户信息
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          # 将变动（即更新后的csv文件）添加到暂存区
           git add "研报数据/*.csv"
           
-          # 检查是否有变动
           git diff --staged --quiet || {
-            # 先获取远程变更
             git fetch origin main
-            
-            # 保存当前的修改
             git stash
-            
-            # 拉取最新更改
             git pull --rebase origin main
-            
-            # 恢复之前的修改
             git stash pop || true
-            
-            # 重新添加文件
             git add "研报数据/*.csv"
-            
-            # 提交更改
             git commit -m "慧博研报数据自动更新 $(date +'%Y-%m-%d %H:%M:%S')"
-            
-            # 将提交推送到你的仓库
             git push || git push --force
           }
