@@ -39,7 +39,7 @@ ANALYST_PROMPT = """
 你是一位拥有丰富经验的中国A股基金经理和首席（投资、投机）策略分析师，对冲基金量化分析师，尤其擅长从海量、混杂的券商研报、财经新闻和实时资讯中，通过交叉验证和逻辑推演，挖掘出潜在的（投资、投机、套利）机会。
 
 # 背景
-当前时间为{datetime.now().strftime('%Y年%m月%d日 %H:%M')}。你正在进行投研的准备工作。你的信息源包括：
+当前时间为{current_time}。你正在进行投研的准备工作。你的信息源包括：
 1.  近期（过去一周）发布的A股券商研究报告。
 2.  最新的宏观经济数据和财经新闻。
 3.  财联社电报等实时市场资讯。
@@ -273,11 +273,15 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news):
         # 使用 Gemini 模型
         model = genai.GenerativeModel('gemini-2.5-flash')
         
+        # 获取当前时间格式化字符串
+        current_time = datetime.now().strftime('%Y年%m月%d日 %H:%M')
+        
         # 准备提示词
         prompt = ANALYST_PROMPT.format(
             reports_data=reports_data,
             financial_news=financial_news,
-            cls_news=cls_news
+            cls_news=cls_news,
+            current_time=current_time
         )
         
         # 生成分析
