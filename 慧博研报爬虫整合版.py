@@ -1,148 +1,492 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # 导入所需的库
-import akshare as ak
+import time
+import csv
+import re
+import os
 import pandas as pd
 from datetime import datetime, timedelta
-import time
-import os
+from bs4 import BeautifulSoup
+import undetected_chromedriver as uc
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
-def get_recent_financial_news():
+# ===== 投研资讯网爬虫函数 =====
+def scrape_hibor_multi_page(driver, start_page=1, end_page=20):
     """
-    获取多个财经新闻来源的最近一周新闻，并合并、排序、去重后保存。
+    使用 undetected-chromedriver 自动抓取慧博投研资讯网的多个列表页。
+
+    Args:
+        driver: Selenium的浏览器驱动实例。
+        start_page (int): 开始的页码。
+        end_page (int): 结束的页码。
+        
+    Returns:
+        list: 包含所有抓取到的研报信息的列表。
     """
-    print("开始获取最近一周的财经新闻...")
-    
-    # 设置时间范围为最近7天
-    seven_days_ago = datetime.now() - timedelta(days=7)
-    all_news_list = []
+    all_reports = []
+    base_url = "https://www.hibor.com.cn/microns_1_{page_num}.html"
 
-    # 1. 财新网 - 内容精选
-    try:
-        print("\n--- 正在获取财新网新闻 ---")
-        stock_news_main_cx_df = ak.stock_news_main_cx()
-        # 将 'pub_time' 列转换为 datetime 对象，并处理无效日期
-        stock_news_main_cx_df['pub_time'] = pd.to_datetime(stock_news_main_cx_df['pub_time'], errors='coerce')
-        # 筛选最近7天的新闻
-        cx_recent = stock_news_main_cx_df[stock_news_main_cx_df['pub_time'] >= seven_days_ago].copy()
-        # 标准化列名，并移除链接
-        cx_recent = cx_recent.rename(columns={'pub_time': '时间', 'tag': '标题'})
-        cx_recent['来源'] = '财新网'
-        cx_recent = cx_recent[['来源', '时间', '标题']]
-        all_news_list.append(cx_recent)
-        print(f"成功获取并处理 {len(cx_recent)} 条财新网新闻。")
-    except Exception as e:
-        print(f"获取财新网新闻失败: {e}")
+    for page_num in range(start_page, end_page + 1):
+        url = base_url.format(page_num=page_num)
+        print(f"--- 开始处理投研资讯网第 {page_num} 页 --- URL: {url}")
 
-    # 2. 同花顺财经 - 全球财经直播
-    try:
-        print("\n--- 正在获取同花顺财经新闻 ---")
-        stock_info_global_ths_df = ak.stock_info_global_ths()
-        # 将 '发布时间' 列转换为 datetime 对象
-        stock_info_global_ths_df['发布时间'] = pd.to_datetime(stock_info_global_ths_df['发布时间'], errors='coerce')
-        ths_recent = stock_info_global_ths_df[stock_info_global_ths_df['发布时间'] >= seven_days_ago].copy()
-        # 标准化列名，并移除链接
-        ths_recent = ths_recent.rename(columns={'发布时间': '时间'})
-        ths_recent['来源'] = '同花顺'
-        ths_recent = ths_recent[['来源', '时间', '标题']]
-        all_news_list.append(ths_recent)
-        print(f"成功获取并处理 {len(ths_recent)} 条同花顺新闻。")
-    except Exception as e:
-        print(f"获取同花顺财经新闻失败: {e}")
-
-    # 3. 财联社 - 电报
-    try:
-        print("\n--- 正在获取财联社新闻 ---")
-        stock_info_global_cls_df = ak.stock_info_global_cls(symbol="全部")
-        # --- 核心修正 ---
-        # 在合并前，将"发布日期"和"发布时间"都强制转换为字符串类型，避免类型错误
-        stock_info_global_cls_df['时间'] = pd.to_datetime(stock_info_global_cls_df['发布日期'].astype(str) + ' ' + stock_info_global_cls_df['发布时间'].astype(str), errors='coerce')
-        cls_recent = stock_info_global_cls_df[stock_info_global_cls_df['时间'] >= seven_days_ago].copy()
-        # 标准化列名，并移除链接
-        cls_recent['来源'] = '财联社'
-        cls_recent = cls_recent[['来源', '时间', '标题']]
-        all_news_list.append(cls_recent)
-        print(f"成功获取并处理 {len(cls_recent)} 条财联社新闻。")
-    except Exception as e:
-        print(f"获取财联社新闻失败: {e}")
-
-    # 4. 新浪财经 - 证券原创 (循环获取多页以覆盖最近一周)
-    try:
-        print("\n--- 正在获取新浪财经新闻 (可能需要一些时间) ---")
-        sina_all = pd.DataFrame()
-        # 循环获取5页，通常足以覆盖最近一周
-        for page in range(1, 6): 
-            print(f"正在获取第 {page} 页...")
-            stock_info_broker_sina_df = ak.stock_info_broker_sina(page=str(page))
-            stock_info_broker_sina_df['时间'] = pd.to_datetime(stock_info_broker_sina_df['时间'], errors='coerce')
-            sina_all = pd.concat([sina_all, stock_info_broker_sina_df])
-            # 如果最后一篇文章的时间已经早于7天前，就停止翻页
-            if not sina_all.empty and sina_all['时间'].min() < seven_days_ago:
-                break
-            time.sleep(1) # 礼貌地等待一下
+        try:
+            driver.get(url)
             
-        sina_recent = sina_all[sina_all['时间'] >= seven_days_ago].copy()
-        # 标准化列名，并移除链接
-        sina_recent = sina_recent.rename(columns={'内容': '标题'})
-        sina_recent['来源'] = '新浪财经'
-        sina_recent = sina_recent[['来源', '时间', '标题']]
-        all_news_list.append(sina_recent)
-        print(f"成功获取并处理 {len(sina_recent)} 条新浪财经新闻。")
-    except Exception as e:
-        print(f"获取新浪财经新闻失败: {e}")
+            WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.ID, "tableList"))
+            )
 
-    # 合并所有新闻源的数据
-    if not all_news_list:
-        print("\n未能从任何来源获取到新闻数据。")
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            
+            table = soup.find('table', id='tableList')
+            if not table:
+                print(f"在第 {page_num} 页未找到ID为 'tableList' 的表格，跳过此页。")
+                continue
+
+            rows = table.select('tbody > tr')
+            page_reports_count = 0
+            
+            for i in range(0, len(rows), 4):
+                if i+2 >= len(rows):
+                    continue
+                    
+                title_row, summary_row, meta_row = rows[i], rows[i+1], rows[i+2]
+
+                if not (title_row and summary_row and meta_row):
+                    continue
+
+                title_element = title_row.select_one('a[href^="/data/"]')
+                full_title = title_element.text.strip() if title_element else 'N/A'
+                
+                summary_cell = summary_row.find('td')
+                summary = 'N/A'
+                if summary_cell:
+                    summary_clone = summary_cell
+                    detail_link = summary_clone.find('a')
+                    if detail_link: detail_link.decompose()
+                    summary = summary_clone.text.strip()
+                
+                meta_cell = meta_row.find('td')
+                author, rating, report_date, pages, sharer = ('N/A',) * 5
+                if meta_cell:
+                    for span in meta_cell.find_all('span', recursive=False):
+                        text = span.text.strip()
+                        if '作者：' in text:
+                            author_tag = span.find('a')
+                            if author_tag: author = author_tag.text.strip()
+                        elif '评级：' in text:
+                            rating_tag = span.find('label')
+                            if rating_tag: rating = rating_tag.text.strip()
+                        elif '页数：' in text:
+                            match = re.search(r'(\d+)', text)
+                            if match: pages = match.group(1)
+                        elif '分享者：' in text:
+                            sharer = text.replace('分享者：', '').strip()
+                        else:
+                            date_match = re.search(r'\d{4}-\d{2}-\d{2}', text)
+                            if date_match: report_date = date_match.group(0)
+                
+                all_reports.append({
+                    "分类": "投研资讯",
+                    "研报标题": full_title,
+                    "摘要": summary,
+                    "作者": author,
+                    "评级": rating,
+                    "页数": pages,
+                    "日期": report_date,
+                    "分享者": sharer,
+                    "来源页": page_num,
+                    "抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                })
+                page_reports_count += 1
+            
+            print(f"在投研资讯网第 {page_num} 页成功抓取 {page_reports_count} 条数据。")
+
+        except Exception as e:
+            print(f"处理投研资讯网第 {page_num} 页时发生错误: {e}")
+            continue
+    
+    return all_reports
+
+# ===== 最新买入研报爬虫函数 =====
+def scrape_latest_buy_reports(driver, start_page=1, end_page=10):
+    """
+    抓取慧博"最新买入"页面的研报。
+
+    Args:
+        driver: Selenium的浏览器驱动实例。
+        start_page (int): 开始的页码。
+        end_page (int): 结束的页码。
+        
+    Returns:
+        list: 包含所有抓取到的研报信息的列表。
+    """
+    all_reports = []
+    base_url = "https://www.hibor.com.cn/rightmore_4_{page_num}.html"
+
+    for page_num in range(start_page, end_page + 1):
+        url = base_url.format(page_num=page_num)
+        print(f"--- 开始处理最新买入第 {page_num} 页 --- URL: {url}")
+
+        try:
+            driver.get(url)
+            
+            WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "rightmore-result"))
+            )
+
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            
+            table = soup.find('table', class_='rightmore-result')
+            if not table:
+                print(f"在第 {page_num} 页未找到 class 为 'rightmore-result' 的表格，跳过此页。")
+                continue
+
+            rows = table.find_all('tr')[1:] 
+            page_reports_count = 0
+            
+            for row in rows:
+                cells = row.find_all('td')
+                if len(cells) < 5:
+                    continue
+
+                title_element = cells[1].find('a')
+                title = title_element.get('title', '').strip() if title_element else 'N/A'
+                if not title:
+                    title = title_element.text.strip() if title_element else 'N/A'
+
+                report_type = cells[2].text.strip()
+                rating = cells[3].text.strip()
+                date = cells[4].text.strip()
+
+                all_reports.append({
+                    "分类": "最新买入",
+                    "研报标题": title,
+                    "类型": report_type,
+                    "评级": rating,
+                    "分享时间": date,
+                    "来源页": page_num,
+                    "抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                })
+                page_reports_count += 1
+            
+            print(f"在最新买入第 {page_num} 页成功抓取 {page_reports_count} 条数据。")
+
+        except Exception as e:
+            print(f"处理最新买入第 {page_num} 页时发生错误: {e}")
+            continue
+            
+    return all_reports
+
+# ===== 热门研报爬虫函数 =====
+def scrape_hibor_list_page(driver, category_id, category_name, start_page, end_page):
+    """
+    一个通用的函数，用于抓取慧博热门列表页。
+
+    Args:
+        driver: Selenium的浏览器驱动实例。
+        category_id (int): 栏目ID (0 for 今日热门, 1 for 本周热门, etc.)。
+        category_name (str): 栏目名称，用于在数据中标记。
+        start_page (int): 开始的页码。
+        end_page (int): 结束的页码。
+    
+    Returns:
+        list: 包含该分类下所有抓取到的研报信息的列表。
+    """
+    category_reports = []
+    base_url = f"https://www.hibor.com.cn/rightmore_{category_id}_{{page_num}}.html"
+
+    for page_num in range(start_page, end_page + 1):
+        url = base_url.format(page_num=page_num)
+        print(f"--- 开始处理 {category_name} 第 {page_num} 页 --- URL: {url}")
+
+        try:
+            driver.get(url)
+            
+            WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "rightmore-result"))
+            )
+
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            
+            table = soup.find('table', class_='rightmore-result')
+            if not table:
+                print(f"在第 {page_num} 页未找到 class 为 'rightmore-result' 的表格，跳过此页。")
+                continue
+
+            rows = table.find_all('tr')[1:] 
+            page_reports_count = 0
+            
+            for row in rows:
+                cells = row.find_all('td')
+                if len(cells) < 5:
+                    continue
+
+                title_element = cells[1].find('a')
+                title = title_element.get('title', '').strip() if title_element else 'N/A'
+                if not title:
+                    title = title_element.text.strip() if title_element else 'N/A'
+
+                report_type = cells[2].text.strip()
+                rating = cells[3].text.strip()
+                date = cells[4].text.strip()
+
+                category_reports.append({
+                    "分类": category_name,
+                    "研报标题": title,
+                    "类型": report_type,
+                    "评级": rating,
+                    "分享时间": date,
+                    "来源页": page_num,
+                    "抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                })
+                page_reports_count += 1
+            
+            print(f"在 {category_name} 第 {page_num} 页成功抓取 {page_reports_count} 条数据。")
+
+        except Exception as e:
+            print(f"处理 {category_name} 第 {page_num} 页时发生错误: {e}")
+            continue
+            
+    return category_reports
+
+# ===== 行业分析研报爬虫函数 =====
+def scrape_category_page(driver, category_name, category_id, start_page, end_page):
+    """
+    一个通用的函数，用于抓取慧博"公司调研"或"行业分析"等使用相同布局的页面。
+
+    Args:
+        driver: Selenium的浏览器驱动实例。
+        category_name (str): 栏目名称，用于在数据中标记。
+        category_id (int): 栏目ID (e.g., 2 for 行业分析, 4 for 投资策略)。
+        start_page (int): 开始的页码。
+        end_page (int): 结束的页码。
+        
+    Returns:
+        list: 包含该分类下所有抓取到的研报信息的列表。
+    """
+    category_reports = []
+    base_url = f"https://www.hibor.com.cn/microns_{category_id}_{{page_num}}.html"
+
+    for page_num in range(start_page, end_page + 1):
+        url = base_url.format(page_num=page_num)
+        print(f"--- 开始处理 {category_name} 第 {page_num} 页 --- URL: {url}")
+
+        try:
+            driver.get(url)
+            
+            WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.ID, "tableList"))
+            )
+
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            
+            table = soup.find('table', id='tableList')
+            if not table:
+                print(f"在第 {page_num} 页未找到ID为 'tableList' 的表格，跳过此页。")
+                continue
+
+            rows = table.select('tbody > tr')
+            page_reports_count = 0
+            
+            for i in range(0, len(rows), 4):
+                if i+2 >= len(rows):
+                    continue
+                    
+                title_row = rows[i]
+                summary_row = rows[i + 1]
+                meta_row = rows[i + 2]
+
+                if not (title_row and summary_row and meta_row):
+                    continue
+
+                title_element = title_row.select_one('a[href^="/data/"]')
+                full_title = title_element.text.strip() if title_element else 'N/A'
+                
+                summary_cell = summary_row.find('td')
+                summary = 'N/A'
+                if summary_cell:
+                    summary_clone = summary_cell
+                    detail_link = summary_clone.find('a')
+                    if detail_link:
+                        detail_link.decompose()
+                    summary = summary_clone.text.strip()
+                
+                meta_cell = meta_row.find('td')
+                author, rating, report_date, pages, sharer = ('N/A',) * 5
+                if meta_cell:
+                    for span in meta_cell.find_all('span', recursive=False):
+                        text = span.text.strip()
+                        if '作者：' in text:
+                            author_tag = span.find('a')
+                            if author_tag: author = author_tag.text.strip()
+                        elif '评级：' in text:
+                            rating_tag = span.find('label')
+                            if rating_tag: rating = rating_tag.text.strip()
+                        elif '页数：' in text:
+                            match = re.search(r'(\d+)', text)
+                            if match: pages = match.group(1)
+                        elif '分享者：' in text:
+                            sharer = text.replace('分享者：', '').strip()
+                        else:
+                            date_match = re.search(r'\d{4}-\d{2}-\d{2}', text)
+                            if date_match: report_date = date_match.group(0)
+                
+                category_reports.append({
+                    "分类": category_name,
+                    "研报标题": full_title,
+                    "摘要": summary,
+                    "作者": author,
+                    "评级": rating,
+                    "页数": pages,
+                    "日期": report_date,
+                    "分享者": sharer,
+                    "来源页": page_num,
+                    "抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                })
+                page_reports_count += 1
+            
+            print(f"在 {category_name} 第 {page_num} 页成功抓取 {page_reports_count} 条数据。")
+
+        except Exception as e:
+            print(f"处理 {category_name} 第 {page_num} 页时发生错误: {e}")
+            continue
+            
+    return category_reports
+
+# ===== 数据去重和保存函数 =====
+def deduplicate_and_save_by_week(all_data):
+    """
+    对抓取的数据进行去重，并按周保存为不同的CSV文件。
+    
+    Args:
+        all_data (list): 包含所有抓取数据的列表。
+    """
+    if not all_data:
+        print("没有数据需要保存")
         return
         
-    new_df = pd.concat(all_news_list, ignore_index=True)
+    # 转换为DataFrame以便于处理
+    df = pd.DataFrame(all_data)
     
-    # 按时间倒序排序
-    new_df = new_df.sort_values(by='时间', ascending=False)
+    # 创建输出目录
+    output_dir = "研报数据"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     
-    # 生成带时间戳的文件名
+    # 去重 - 基于研报标题和分类
+    print(f"去重前数据量: {len(df)}")
+    df = df.drop_duplicates(subset=['分类', '研报标题'])
+    print(f"去重后数据量: {len(df)}")
+    
+    # 获取当前日期
+    today = datetime.now()
+    
+    # 计算本周的开始日期（周一）和结束日期（周日）
+    start_of_week = today - timedelta(days=today.weekday())
+    end_of_week = start_of_week + timedelta(days=6)
+    
+    # 格式化日期为字符串
+    week_str = f"{start_of_week.strftime('%Y%m%d')}-{end_of_week.strftime('%Y%m%d')}"
+    
+    # 构建文件名
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    filename = f"financial_news_last_week_{timestamp}.csv"
-    archive_filename = "financial_news_archive.csv"
+    filename = os.path.join(output_dir, f"慧博研报_第{today.isocalendar()[1]}周_{week_str}_{timestamp}.csv")
     
-    # 检查是否存在历史数据文件，如果存在则读取并与新数据合并去重
-    if os.path.exists(archive_filename):
-        try:
-            print("\n--- 读取历史数据并进行去重 ---")
-            existing_df = pd.read_csv(archive_filename, encoding='utf-8-sig')
-            existing_df['时间'] = pd.to_datetime(existing_df['时间'], errors='coerce')
-            
-            # 合并新旧数据
-            combined_df = pd.concat([existing_df, new_df], ignore_index=True)
-            
-            # 使用标题和来源进行去重，保留最新的时间记录
-            combined_df = combined_df.sort_values('时间', ascending=False)
-            combined_df = combined_df.drop_duplicates(subset=['标题', '来源'], keep='first')
-            
-            # 只保留最近7天的数据
-            combined_df = combined_df[combined_df['时间'] >= seven_days_ago]
-            
-            # 再次按时间倒序排序
-            final_df = combined_df.sort_values(by='时间', ascending=False)
-            
-            print(f"去重前新闻数量: {len(new_df)}")
-            print(f"去重后新闻总数量: {len(final_df)}")
-        except Exception as e:
-            print(f"读取历史数据失败: {e}")
-            final_df = new_df
-    else:
-        final_df = new_df
+    # 保存到CSV
+    df.to_csv(filename, index=False, encoding='utf-8-sig')
+    print(f"数据已保存至: {filename}")
     
-    print(f"\n--- 所有新闻处理完毕 ---")
-    print(f"共整理 {len(final_df)} 条最近一周的新闻，正在保存到文件: {filename} 和 {archive_filename}")
-    
-    # 保存到CSV，使用 utf-8-sig 编码确保Excel能正确显示中文
-    final_df.to_csv(filename, index=False, encoding='utf-8-sig')
-    final_df.to_csv(archive_filename, index=False, encoding='utf-8-sig')
-    
-    print("文件保存成功！")
-    print("\n最终数据预览:")
-    print(final_df.head())
+    # 同时保存一个当前最新版本的文件（方便其他程序引用）
+    latest_file = os.path.join(output_dir, "慧博研报_最新数据.csv")
+    df.to_csv(latest_file, index=False, encoding='utf-8-sig')
+    print(f"最新数据已保存至: {latest_file}")
 
-# --- 主程序入口 ---
+# ===== 主程序入口 =====
+def main():
+    """主程序入口函数"""
+    all_combined_data = []
+    
+    print("正在设置浏览器驱动...")
+    options = uc.ChromeOptions()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--log-level=3')
+    options.add_argument('--disable-gpu')
+
+    driver = None
+    try:
+        print("检测到浏览器版本为 137，正在匹配对应驱动...")
+        driver = uc.Chrome(options=options, use_subprocess=True, version_main=137)
+        driver.implicitly_wait(5) 
+
+        # --- 任务1: 抓取投研资讯网 ---
+        print("\n=== 开始抓取投研资讯网数据 ===")
+        info_data = scrape_hibor_multi_page(driver, 1, 5)
+        all_combined_data.extend(info_data)
+        
+        print("\n--- 投研资讯网抓取完成，暂停2秒 ---\n")
+        time.sleep(2)
+        
+        # --- 任务2: 抓取最新买入 ---
+        print("\n=== 开始抓取最新买入数据 ===")
+        buy_data = scrape_latest_buy_reports(driver, 1, 5)
+        all_combined_data.extend(buy_data)
+        
+        print("\n--- 最新买入抓取完成，暂停2秒 ---\n")
+        time.sleep(2)
+
+        # --- 任务3: 抓取热门研报 ---
+        print("\n=== 开始抓取热门研报数据 ===")
+        # 抓取"今日热门"
+        today_hot_data = scrape_hibor_list_page(driver, 0, "今日热门", 1, 3)
+        all_combined_data.extend(today_hot_data)
+        
+        print("\n--- '今日热门' 抓取完成，暂停2秒 ---\n")
+        time.sleep(2)
+
+        # 抓取"本周热门"
+        week_hot_data = scrape_hibor_list_page(driver, 1, "本周热门", 1, 3)
+        all_combined_data.extend(week_hot_data)
+        
+        print("\n--- '本周热门' 抓取完成，暂停2秒 ---\n")
+        time.sleep(2)
+        
+        # 抓取"本月热门"
+        month_hot_data = scrape_hibor_list_page(driver, 6, "本月热门", 1, 3)
+        all_combined_data.extend(month_hot_data)
+        
+        print("\n--- '本月热门' 抓取完成，暂停2秒 ---\n")
+        time.sleep(2)
+        
+        # --- 任务4: 抓取行业分析 ---
+        print("\n=== 开始抓取行业分析数据 ===")
+        # 抓取"行业分析"
+        industry_data = scrape_category_page(driver, "行业分析", 2, 1, 3)
+        all_combined_data.extend(industry_data)
+        
+        print("\n--- '行业分析' 抓取完成，暂停2秒 ---\n")
+        time.sleep(2)
+
+        # 抓取"投资策略"
+        strategy_data = scrape_category_page(driver, "投资策略", 4, 1, 3)
+        all_combined_data.extend(strategy_data)
+
+    except Exception as e:
+        print(f"程序主流程发生错误: {e}")
+    finally:
+        if driver:
+            driver.quit()
+        print("\n--- 所有页面处理完毕 ---")
+
+    # 数据去重和保存
+    deduplicate_and_save_by_week(all_combined_data)
+
 if __name__ == "__main__":
-    get_recent_financial_news()
+    main()
