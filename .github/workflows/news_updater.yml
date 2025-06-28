@@ -10,6 +10,9 @@ on:
 jobs:
   update-reports:
     runs-on: ubuntu-latest
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      FANGTANG_KEY: ${{ secrets.FANGTANG_KEY }}
     steps:
       # 第一步：下载你的仓库代码到虚拟环境中
       - name: Checkout repository
@@ -36,13 +39,17 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas beautifulsoup4 undetected-chromedriver selenium
+          pip install pandas beautifulsoup4 undetected-chromedriver selenium google-generativeai
 
       # 第五步：运行爬虫脚本来获取研报数据
       - name: Run hibor scraper script
         run: python 慧博研报爬虫整合版.py
 
-      # 第六步：如果文件有变动，则自动提交回仓库
+      # 第六步：运行AI分析脚本生成研报摘要并推送
+      - name: Run report analysis
+        run: python appstore_monitor.py --reports
+
+      # 第七步：如果文件有变动，则自动提交回仓库
       - name: Commit and push if changed
         run: |
           # 配置Git用户信息
