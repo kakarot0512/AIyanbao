@@ -19,16 +19,7 @@
 - 构建高成长潜力模拟投资组合
 - 通过方糖推送分析结果
 
-## 环境变量配置
 
-在GitHub Actions中需要配置以下密钥：
-
-1. `GEMINI_API_KEY`: Google Gemini API密钥
-   - 获取方法：访问 https://ai.google.dev/ 注册并创建API密钥
-
-
-2. `FANGTANG_KEY`: 方糖推送密钥
-   - 获取方法：访问 https://sct.ftqq.com/ 注册并获取推送密钥
 
 
 ## 本地运行
@@ -58,33 +49,3 @@ python 慧博研报爬虫整合版.py
 ```bash
 python appstore_monitor.py
 ```
-
-## 自动化运行
-
-本项目使用GitHub Actions自动化运行，每小时执行一次：
-1. 爬取最新研报数据
-2. 使用AI分析研报并推送结果
-3. 将更新的数据提交回仓库
-
-## 注意事项
-
-1. 确保在GitHub仓库的Settings -> Secrets and variables -> Actions中配置了`GEMINI_API_KEY`和`FANGTANG_KEY`
-2. 研报数据保存在`研报数据`目录下
-3. 最新的研报数据保存为`慧博研报_最新数据.csv`
-
-## 错误排查
-
-1. 方糖推送失败
-   - 检查`FANGTANG_KEY`是否正确
-   - 检查方糖服务是否可用
-   - 查看日志中是否有详细错误信息
-
-2. Gemini API调用失败
-   - 检查`GEMINI_API_KEY`是否正确
-   - 检查API密钥是否有效
-   - 查看日志中是否有详细错误信息
-
-3. 爬虫失败
-   - 检查网站结构是否发生变化
-   - 检查网络连接是否正常
-   - 尝试更新Chrome浏览器版本
