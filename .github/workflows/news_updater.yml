@@ -57,6 +57,7 @@ jobs:
           mkdir -p 财经新闻数据
           mkdir -p 财联社/output/cls
           mkdir -p 国际市场数据/charts
+          mkdir -p 每日报告
 
       # 第七步：运行国际市场数据分析
       - name: Run international market data analysis
@@ -79,6 +80,7 @@ jobs:
           git add "财联社/output/cls/*.md"
           git add "国际市场数据/*.json"
           git add "国际市场数据/*.md"
+          git add "每日报告/**/*.md"
           
           git diff --staged --quiet || {
             git fetch origin main
@@ -90,6 +92,7 @@ jobs:
             git add "财联社/output/cls/*.md"
             git add "国际市场数据/*.json"
             git add "国际市场数据/*.md"
+            git add "每日报告/**/*.md"
             git commit -m "数据自动更新 $(date +'%Y-%m-%d %H:%M:%S')"
             git push || git push --force
           }
