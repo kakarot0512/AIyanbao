@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import requests
+import logging
 import os
 import sys
 import pandas as pd
 import json
-import logging
+import time
+import pytz
 from datetime import datetime, timezone, timedelta
 import google.generativeai as genai
 from google.generativeai import types
 
 # 配置日志
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] %(message)s',
@@ -19,28 +21,24 @@ logging.basicConfig(
 )
 
 # 配置参数
-# Configuration parameters
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")  # 从环境变量获取 Gemini API KEY (Get Gemini API KEY from environment variables)
-LATEST_REPORT_FILE = "研报数据/慧博研报_最新数据.csv"  # 最新研报数据文件 (Latest research report data file)
-FINANCIAL_NEWS_DIR = "财经新闻数据"  # 财经新闻数据目录 (Financial news data directory)
-CLS_NEWS_DIR = "财联社/output/cls"  # 财联社新闻数据目录 (Cailianpress news data directory)
-MARKET_DATA_DIR = "国际市场数据"  # 国际市场数据目录 (International market data directory)
-OUTPUT_DIR = "每日报告" # 报告输出主目录 (Main output directory for reports)
-
+FANGTANG_KEY = os.environ.get("FANGTANG_KEY", "")  # 从环境变量获取方糖 KEY
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")  # 从环境变量获取 Gemini API KEY
+LATEST_REPORT_FILE = "研报数据/慧博研报_最新数据.csv"  # 最新研报数据文件
+FINANCIAL_NEWS_DIR = "财经新闻数据"  # 财经新闻数据目录
+CLS_NEWS_DIR = "财联社/output/cls"  # 财联社新闻数据目录
+MARKET_DATA_DIR = "国际市场数据"  # 国际市场数据目录
+DAILY_REPORT_DIR = "每日报告" # 每日报告输出目录
 
 # 创建数据目录
-# Create data directories
 os.makedirs(FINANCIAL_NEWS_DIR, exist_ok=True)
 os.makedirs(MARKET_DATA_DIR, exist_ok=True)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(DAILY_REPORT_DIR, exist_ok=True)
 
 # 配置 Gemini API
-# Configure Gemini API
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     
 # 综合分析师角色描述
-# Comprehensive Analyst Role Description
 ANALYST_PROMPT = """
 # 角色
 你是一位拥有丰富经验的中国A股基金经理和首席（投资、投机）策略分析师，对冲基金量化分析师，尤其擅长从海量、混杂的券商研报、财经新闻和实时资讯中，通过交叉验证和逻辑推演，挖掘出潜在的（投资、投机、套利）机会。
@@ -110,8 +108,8 @@ ANALYST_PROMPT = """
 （请使用表格呈现）
 | 股票代码 | 公司名称 | 核心投资逻辑 (一句话概括) | 成长驱动因素与近期催化剂 | 主要风险提示 | 组合内定位 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-|          |          |                               |                          |              |            |
-|   ...    |   ...    |            ...                  |           ...                |     ...      |    ...     |
+|          |          |                           |                          |              |            |
+|   ...    |   ...    |            ...              |            ...             |    ...       |    ...     |
 
 **五、 投资组合风险声明**
 * 本模拟投资组合完全基于所提供的历史信息构建，仅作为投资研究和分析思路的展示。所有信息和观点均有时效性，不构成任何实际的投资建议。投资者在做出任何投资决策前，必须进行独立的深入研究和风险评估。市场有风险，投资需谨慎。
@@ -133,101 +131,129 @@ ANALYST_PROMPT = """
 """
 
 def get_china_time():
-    """获取中国时间 (Get China time)"""
-    # 获取当前 UTC 时间 (Get current UTC time)
+    """获取中国时间"""
+    # 获取当前 UTC 时间
     utc_now = datetime.now(timezone.utc)
-    # 转换为中国时间 (UTC+8) (Convert to China time (UTC+8))
+    # 转换为中国时间 (UTC+8)
     china_now = utc_now + timedelta(hours=8)
     return china_now
 
+def send_to_fangtang(title, content, short):
+    """发送消息到方糖"""
+    if not FANGTANG_KEY:
+        logging.warning("未设置方糖 KEY，跳过推送")
+        return False
+    
+    try:
+        url = f"https://sctapi.ftqq.com/{FANGTANG_KEY}.send"
+        data = {
+            "title": title,
+            "desp": content,
+            "short": short
+        }
+        response = requests.post(url, data=data, timeout=10)
+        response.raise_for_status()
+        result = response.json()
+        
+        if result.get("code") == 0:
+            logging.info("方糖推送成功")
+            return True
+        else:
+            logging.error(f"方糖推送失败: {result.get('message', '未知错误')}")
+            return False
+    
+    except Exception as e:
+        logging.error(f"方糖推送异常: {str(e)}")
+        return False
+
 def load_research_reports():
-    """加载最新的研报数据 (Load latest research report data)"""
+    """加载最新的研报数据"""
     try:
         if os.path.exists(LATEST_REPORT_FILE):
-            # 直接读取CSV文件内容，不做处理 (Directly read CSV file content without processing)
+            # 直接读取CSV文件内容，不做处理
             with open(LATEST_REPORT_FILE, 'r', encoding='utf-8-sig') as f:
                 csv_content = f.read()
-            logging.info(f"成功加载研报数据文件 (Successfully loaded research report data file)")
+            logging.info(f"成功加载研报数据文件")
             return csv_content
         else:
-            logging.warning(f"研报数据文件 {LATEST_REPORT_FILE} 不存在 (Research report data file {LATEST_REPORT_FILE} does not exist)")
+            logging.warning(f"研报数据文件 {LATEST_REPORT_FILE} 不存在")
             return None
     except Exception as e:
-        logging.error(f"加载研报数据失败: {str(e)} (Failed to load research report data: {str(e)})")
+        logging.error(f"加载研报数据失败: {str(e)}")
         return None
 
 def load_financial_news():
-    """加载最新的财经新闻数据 (Load latest financial news data)"""
+    """加载最新的财经新闻数据"""
     try:
-        # 获取当前年月（使用中国时间） (Get current year and month (using China time))
+        # 获取当前年月（使用中国时间）
         current_date = get_china_time()
         current_year = current_date.year
         current_month = current_date.month
         
-        # 构建当月文件名 (Construct current month's filename)
+        # 构建当月文件名
         archive_filename = f"financial_news_archive-{current_year}-{current_month:02d}.csv"
         file_path = os.path.join(FINANCIAL_NEWS_DIR, archive_filename)
         
         if os.path.exists(file_path):
-            # 读取CSV文件 (Read CSV file)
+            # 读取CSV文件
             df = pd.read_csv(file_path, encoding='utf-8-sig')
             
-            # 只取最近200条新闻 (Take only the latest 200 news articles)
+            # 只取最近200条新闻
             if len(df) > 200:
                 df = df.head(200)
             
-            # 转换为字符串 (Convert to string)
+            # 转换为字符串
             news_content = df.to_string(index=False)
-            logging.info(f"成功加载财经新闻数据文件，共 {len(df)} 条记录 (Successfully loaded financial news data file, {len(df)} records in total)")
+            logging.info(f"成功加载财经新闻数据文件，共 {len(df)} 条记录")
             return news_content
         else:
-            logging.warning(f"财经新闻数据文件 {file_path} 不存在 (Financial news data file {file_path} does not exist)")
-            return "暂无财经新闻数据 (No financial news data available)"
+            logging.warning(f"财经新闻数据文件 {file_path} 不存在")
+            return "暂无财经新闻数据"
     except Exception as e:
-        logging.error(f"加载财经新闻数据失败: {str(e)} (Failed to load financial news data: {str(e)})")
-        return "加载财经新闻数据失败 (Failed to load financial news data)"
+        logging.error(f"加载财经新闻数据失败: {str(e)}")
+        return "加载财经新闻数据失败"
 
 def load_cls_news():
-    """加载当前周和上一周的财联社新闻数据 (Load Cailianpress news data for the current and previous week)"""
+    """加载当前周和上一周的财联社新闻数据"""
     try:
-        # 获取当前周和上一周的信息（使用中国时间） (Get info for current and previous week (using China time))
+        # 获取当前周和上一周的信息（使用中国时间）
         current_date = get_china_time()
         current_week_num = current_date.isocalendar()[1]
         current_year = current_date.year
         
-        # 计算上一周的周数和年份 (Calculate previous week's number and year)
+        # 计算上一周的周数和年份
         prev_week_date = current_date - timedelta(days=7)
         prev_week_num = prev_week_date.isocalendar()[1]
         prev_year = prev_week_date.year
         
-        # 构建当前周和上一周的文件路径 (Construct file paths for current and previous week)
+        # 构建当前周和上一周的文件路径
         current_week_str = f"{current_year}-W{current_week_num:02d}"
         prev_week_str = f"{prev_year}-W{prev_week_num:02d}"
         
         current_file_path = os.path.join(CLS_NEWS_DIR, f"cls_{current_week_str}.md")
         prev_file_path = os.path.join(CLS_NEWS_DIR, f"cls_{prev_week_str}.md")
         
-        # 初始化内容变量 (Initialize content variables)
+        # 初始化内容变量
         current_week_content = ""
         prev_week_content = ""
         
-        # 尝试读取当前周的数据 (Try to read current week's data)
+        # 尝试读取当前周的数据
         if os.path.exists(current_file_path):
             with open(current_file_path, 'r', encoding='utf-8') as f:
                 current_week_content = f.read()
-            logging.info(f"成功加载当前周 ({current_week_str}) 财联社新闻数据 (Successfully loaded current week's ({current_week_str}) Cailianpress news data)")
+            logging.info(f"成功加载当前周 ({current_week_str}) 财联社新闻数据")
         else:
-            logging.warning(f"当前周 ({current_week_str}) 财联社新闻数据文件不存在 (Current week's ({current_week_str}) Cailianpress news data file does not exist)")
+            logging.warning(f"当前周 ({current_week_str}) 财联社新闻数据文件不存在")
         
-        # 尝试读取上一周的数据 (Try to read previous week's data)
+        # 尝试读取上一周的数据
         if os.path.exists(prev_file_path):
             with open(prev_file_path, 'r', encoding='utf-8') as f:
                 prev_week_content = f.read()
-            logging.info(f"成功加载上一周 ({prev_week_str}) 财联社新闻数据 (Successfully loaded previous week's ({prev_week_str}) Cailianpress news data)")
+            logging.info(f"成功加载上一周 ({prev_week_str}) 财联社新闻数据")
         else:
-            logging.warning(f"上一周 ({prev_week_str}) 财联社新闻数据文件不存在 (Previous week's ({prev_week_str}) Cailianpress news data file does not exist)")
+            logging.warning(f"上一周 ({prev_week_str}) 财联社新闻数据文件不存在")
         
-        # 组合两周的数据 (Combine data from both weeks)
+        # 组合两周的数据
         combined_content = ""
         
         if current_week_content:
@@ -236,73 +262,73 @@ def load_cls_news():
         if prev_week_content:
             combined_content += f"# 上一周 ({prev_week_str}) 财联社电报\n\n{prev_week_content}"
         
-        # 如果两周都没有数据，返回提示信息 (If no data for both weeks, return a message)
+        # 如果两周都没有数据，返回提示信息
         if not combined_content:
-            return "暂无财联社新闻数据 (No Cailianpress news data available)"
+            return "暂无财联社新闻数据"
             
         return combined_content
         
     except Exception as e:
-        logging.error(f"加载财联社新闻数据失败: {str(e)} (Failed to load Cailianpress news data: {str(e)})")
-        return "加载财联社新闻数据失败 (Failed to load Cailianpress news data)"
+        logging.error(f"加载财联社新闻数据失败: {str(e)}")
+        return "加载财联社新闻数据失败"
 
 def load_market_data():
-    """加载最新的国际市场数据 (Load latest international market data)"""
+    """加载最新的国际市场数据"""
     try:
-        # 尝试加载最新的市场数据和分析 (Try to load latest market data and analysis)
+        # 尝试加载最新的市场数据和分析
         market_data_file = os.path.join(MARKET_DATA_DIR, "global_market_data_latest.json")
         market_analysis_file = os.path.join(MARKET_DATA_DIR, "market_analysis_" + get_china_time().strftime('%Y-%m-%d') + ".md")
         
         market_data = None
         market_analysis = None
         
-        # 加载市场数据 (Load market data)
+        # 加载市场数据
         if os.path.exists(market_data_file):
             with open(market_data_file, 'r', encoding='utf-8') as f:
                 market_data = json.load(f)
-            logging.info(f"成功加载国际市场数据 (Successfully loaded international market data)")
+            logging.info(f"成功加载国际市场数据")
         else:
-            logging.warning(f"国际市场数据文件 {market_data_file} 不存在 (International market data file {market_data_file} does not exist)")
+            logging.warning(f"国际市场数据文件 {market_data_file} 不存在")
         
-        # 加载市场分析 (Load market analysis)
+        # 加载市场分析
         if os.path.exists(market_analysis_file):
             with open(market_analysis_file, 'r', encoding='utf-8') as f:
                 market_analysis = f.read()
-            logging.info(f"成功加载国际市场分析 (Successfully loaded international market analysis)")
+            logging.info(f"成功加载国际市场分析")
         else:
-            # 尝试查找最近的分析文件 (Try to find the most recent analysis file)
+            # 尝试查找最近的分析文件
             analysis_files = [f for f in os.listdir(MARKET_DATA_DIR) if f.startswith("market_analysis_") and f.endswith(".md")]
             if analysis_files:
-                # 按日期排序，获取最新的 (Sort by date to get the latest)
+                # 按日期排序，获取最新的
                 latest_file = sorted(analysis_files)[-1]
                 with open(os.path.join(MARKET_DATA_DIR, latest_file), 'r', encoding='utf-8') as f:
                     market_analysis = f.read()
-                logging.info(f"成功加载最近的国际市场分析: {latest_file} (Successfully loaded most recent international market analysis: {latest_file})")
+                logging.info(f"成功加载最近的国际市场分析: {latest_file}")
             else:
-                logging.warning("未找到任何国际市场分析文件 (No international market analysis files found)")
+                logging.warning("未找到任何国际市场分析文件")
         
         return market_data, market_analysis
     except Exception as e:
-        logging.error(f"加载国际市场数据失败: {e} (Failed to load international market data: {e})")
+        logging.error(f"加载国际市场数据失败: {e}")
         return None, None
 
 def generate_comprehensive_analysis(reports_data, financial_news, cls_news, market_analysis):
-    """使用 Gemini 模型生成综合分析报告 (Generate comprehensive analysis report using Gemini model)"""
+    """使用 Gemini 模型生成综合分析报告"""
     if not GEMINI_API_KEY:
-        logging.warning("未设置 Gemini API KEY，跳过生成分析 (Gemini API KEY not set, skipping analysis generation)")
-        return "未配置 Gemini API KEY，无法生成分析 (Gemini API KEY not configured, cannot generate analysis)"
+        logging.warning("未设置 Gemini API KEY，跳过生成分析")
+        return "未配置 Gemini API KEY，无法生成分析"
     
     try:
-        # 使用 Gemini 模型 (Use Gemini model)
+        # 使用 Gemini 模型
         model = genai.GenerativeModel('gemini-1.5-flash')
         
-        # 获取当前中国时间格式化字符串，包含星期 (Get formatted China time string, including day of the week)
+        # 获取当前中国时间格式化字符串，包含星期
         china_time = get_china_time()
         weekday_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
         weekday = weekday_names[china_time.weekday()]
         current_time = f"{china_time.strftime('%Y年%m月%d日 %H:%M')} {weekday}"
         
-        # 准备提示词 (Prepare prompt)
+        # 准备提示词
         prompt = ANALYST_PROMPT.format(
             reports_data=reports_data,
             financial_news=financial_news,
@@ -311,83 +337,114 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news, mark
             market_analysis=market_analysis
         )
         
-        # 生成分析 (Generate analysis)
-        logging.info("开始使用 Gemini 生成综合分析... (Starting to generate comprehensive analysis using Gemini...)")
+        # 生成分析
+        logging.info("开始使用 Gemini 生成综合分析...")
         
-        # 生成内容 (Generate content)
-        response = model.generate_content(
-            prompt,
-        )
+        # 生成内容
+        response = model.generate_content(prompt)
         
         if response and hasattr(response, 'text'):
-            logging.info("成功生成综合分析 (Successfully generated comprehensive analysis)")
+            logging.info("成功生成综合分析")
             return response.text
         else:
-            logging.error("生成分析失败: 响应格式异常 (Failed to generate analysis: abnormal response format)")
-            # 尝试打印更多错误信息 (Try to print more error info)
-            logging.error(f"Gemini response: {response}")
-            return "生成分析失败: 响应格式异常 (Failed to generate analysis: abnormal response format)"
-    
+            logging.error("生成分析失败: 响应格式异常或内容为空")
+            # 尝试从 response.parts 获取内容
+            try:
+                return response.parts[0].text
+            except (IndexError, AttributeError):
+                logging.error("无法从 response.parts 提取文本")
+                return "生成分析失败: 响应格式异常"
+
     except Exception as e:
-        logging.error(f"生成分析失败: {str(e)} (Failed to generate analysis: {str(e)})")
-        return f"生成分析失败: {str(e)} (Failed to generate analysis: {str(e)})"
+        logging.error(f"生成分析失败: {str(e)}")
+        return f"生成分析失败: {str(e)}"
 
-def save_analysis_report(analysis):
-    """将分析报告保存到文件 (Save the analysis report to a file)"""
+def save_analysis_to_file(analysis_content):
+    """将分析报告保存到指定目录的 MD 文件中"""
     try:
-        # 获取中国时间 (Get China time)
+        # 获取当前中国时间
         china_time = get_china_time()
-        date_folder = china_time.strftime('%Y-%m-%d')
-        time_filename = china_time.strftime('%H-%M-%S') + ".md"
+        date_str = china_time.strftime('%Y-%m-%d')
+        time_str = china_time.strftime('%H%M%S')
 
-        # 创建日期子文件夹 (Create date subfolder)
-        date_specific_dir = os.path.join(OUTPUT_DIR, date_folder)
-        os.makedirs(date_specific_dir, exist_ok=True)
+        # 构建目录路径: 每日报告/YYYY-MM-DD/
+        report_date_dir = os.path.join(DAILY_REPORT_DIR, date_str)
+        os.makedirs(report_date_dir, exist_ok=True)
 
-        # 构建完整文件路径 (Construct full file path)
-        file_path = os.path.join(date_specific_dir, time_filename)
+        # 构建完整文件路径
+        file_name = f"analysis_report_{time_str}.md"
+        file_path = os.path.join(report_date_dir, file_name)
 
-        # 写入文件 (Write to file)
+        # 写入文件
         with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(analysis)
+            f.write(analysis_content)
 
-        logging.info(f"分析报告已成功保存至: {file_path} (Analysis report successfully saved to: {file_path})")
+        logging.info(f"分析报告已成功保存到: {file_path}")
         return True
 
     except Exception as e:
-        logging.error(f"保存分析报告失败: {str(e)} (Failed to save analysis report: {str(e)})")
+        logging.error(f"保存分析报告到文件失败: {str(e)}")
+        return False
+
+def send_analysis_report(analysis):
+    """发送分析报告到方糖"""
+    if not FANGTANG_KEY:
+        logging.warning("未设置方糖 KEY，跳过推送")
+        return False
+    
+    try:
+        # 获取中国时间并格式化
+        china_time = get_china_time()
+        time_str = china_time.strftime('%Y-%m-%d %H:%M')
+        
+        # 构建推送标题和内容
+        title = f"投资数据综合AI分析 - {time_str} (中国时间)"
+        content = analysis
+        short = "投资数据综合AI分析已生成"
+        
+        # 发送到方糖
+        return send_to_fangtang(title, content, short)
+    
+    except Exception as e:
+        logging.error(f"发送分析报告失败: {str(e)}")
         return False
 
 def process_all_data():
-    """处理所有数据并生成综合分析 (Process all data and generate comprehensive analysis)"""
-    logging.info("开始处理所有数据... (Starting to process all data...)")
+    """处理所有数据，生成、保存并发送综合分析"""
+    logging.info("开始处理所有数据...")
     
-    # 加载研报数据 (Load research report data)
-    reports_data = load_research_reports() or "暂无研报数据 (No research report data available)"
+    # 加载研报数据
+    reports_data = load_research_reports() or "暂无研报数据"
     
-    # 加载财经新闻数据 (Load financial news data)
+    # 加载财经新闻数据
     financial_news = load_financial_news()
     
-    # 加载财联社新闻数据 (Load Cailianpress news data)
+    # 加载财联社新闻数据
     cls_news = load_cls_news()
     
-    # 加载国际市场数据 (Load international market data)
+    # 加载国际市场数据
     market_data, market_analysis = load_market_data()
-    market_analysis = market_analysis or "暂无国际市场分析数据 (No international market analysis data available)"
+    market_analysis_str = str(market_analysis) if market_analysis else "暂无国际市场分析数据"
     
-    # 生成综合分析 (Generate comprehensive analysis)
-    analysis = generate_comprehensive_analysis(reports_data, financial_news, cls_news, market_analysis)
+    # 生成综合分析
+    analysis = generate_comprehensive_analysis(reports_data, financial_news, cls_news, market_analysis_str)
     
-    # 保存分析报告 (Save analysis report)
-    if "生成分析失败" not in analysis:
-        success = save_analysis_report(analysis)
-        if success:
-            logging.info("综合分析报告已成功保存 (Comprehensive analysis report saved successfully)")
+    # 只有在成功生成分析报告时才进行保存和推送
+    if analysis and "生成分析失败" not in analysis:
+        # 1. 保存分析报告到文件
+        save_success = save_analysis_to_file(analysis)
+        if not save_success:
+            logging.error("分析报告保存失败，但仍会尝试推送。")
+
+        # 2. 发送分析报告到方糖
+        push_success = send_analysis_report(analysis)
+        if push_success:
+            logging.info("综合分析报告已成功推送")
         else:
-            logging.error("综合分析报告保存失败 (Failed to save comprehensive analysis report)")
+            logging.error("综合分析报告推送失败")
     else:
-        logging.error("未成功生成综合分析报告，跳过保存 (Comprehensive analysis report not generated successfully, skipping save)")
+        logging.error("未生成有效的综合分析报告，跳过保存和推送")
 
 if __name__ == "__main__":
-    # 处理所有数据 (Process all data)
+    # 处理所有数据
     process_all_data()
