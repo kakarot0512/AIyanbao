@@ -48,7 +48,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas beautifulsoup4 undetected-chromedriver selenium google-generativeai requests akshare pytz numpy yfinance
+          pip install pandas beautifulsoup4 undetected-chromedriver selenium google-generativeai requests akshare pytz numpy yfinance tqdm
 
       # 第六步：创建必要的目录
       - name: Create directories
@@ -58,6 +58,8 @@ jobs:
           mkdir -p 财联社/output/cls
           mkdir -p 国际市场数据/charts
           mkdir -p 每日报告
+          mkdir -p 分析结果
+          mkdir -p 股票原始数据
 
       # 第七步：运行国际市场数据分析
       - name: Run international market data analysis
@@ -81,6 +83,9 @@ jobs:
           git add "国际市场数据/*.json"
           git add "国际市场数据/*.md"
           git add "每日报告/**/*.md"
+          git add "分析结果/*.json"
+          git add "分析结果/*.md"
+          git add "股票原始数据/**/*.csv"
           
           git diff --staged --quiet || {
             git fetch origin main
@@ -93,6 +98,9 @@ jobs:
             git add "国际市场数据/*.json"
             git add "国际市场数据/*.md"
             git add "每日报告/**/*.md"
+            git add "分析结果/*.json"
+            git add "分析结果/*.md"
+            git add "股票原始数据/**/*.csv"
             git commit -m "数据自动更新 $(date +'%Y-%m-%d %H:%M:%S')"
             git push || git push --force
           }
