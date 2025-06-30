@@ -16,7 +16,7 @@ from google.generativeai import types
 # 配置日志
 logging.basicConfig(
     level=logging.INFO,
-    format='[%(asctime)s] - %(levelname)s - %(message)s',
+    format='[%(asctime)s] %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
@@ -30,23 +30,14 @@ MARKET_DATA_DIR = "国际市场数据"  # 国际市场数据目录
 DAILY_REPORT_DIR = "每日报告" # 每日报告输出目录
 
 # 创建数据目录
-logging.info("开始创建所需的数据目录...")
 os.makedirs(FINANCIAL_NEWS_DIR, exist_ok=True)
-logging.info(f"目录 '{FINANCIAL_NEWS_DIR}' 已确认存在。")
 os.makedirs(MARKET_DATA_DIR, exist_ok=True)
-logging.info(f"目录 '{MARKET_DATA_DIR}' 已确认存在。")
 os.makedirs(DAILY_REPORT_DIR, exist_ok=True)
-logging.info(f"目录 '{DAILY_REPORT_DIR}' 已确认存在。")
-logging.info("数据目录创建完成。")
-
 
 # 配置 Gemini API
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-    logging.info("Gemini API KEY 已配置。")
-else:
-    logging.warning("警告: 未找到 Gemini API KEY 环境变量。")
-
+    
 # 综合分析师角色描述
 ANALYST_PROMPT = """
 # 角色
@@ -91,6 +82,7 @@ ANALYST_PROMPT = """
     * 最终构建一个包含8-12只股票的投资组合。
     * 组合内应适当分散，覆盖你识别出的主要核心主题，避免在单一赛道上过度集中。
     * 为每只入选的股票，明确其在组合中的定位（例如："核心配置"代表逻辑最强、确定性高；"卫星配置"代表弹性较大、属于博取更高收益的部分）。
+    * 避免推荐688开头的科创板股票。
 
 **输出格式 (请严格按照以下结构呈现):**
 
@@ -141,7 +133,9 @@ ANALYST_PROMPT = """
 
 def get_china_time():
     """获取中国时间"""
+    # 获取当前 UTC 时间
     utc_now = datetime.now(timezone.utc)
+    # 转换为中国时间 (UTC+8)
     china_now = utc_now + timedelta(hours=8)
     return china_now
 
@@ -177,9 +171,10 @@ def load_research_reports():
     """加载最新的研报数据"""
     try:
         if os.path.exists(LATEST_REPORT_FILE):
+            # 直接读取CSV文件内容，不做处理
             with open(LATEST_REPORT_FILE, 'r', encoding='utf-8-sig') as f:
                 csv_content = f.read()
-            logging.info(f"成功加载研报数据文件: {LATEST_REPORT_FILE}")
+            logging.info(f"成功加载研报数据文件")
             return csv_content
         else:
             logging.warning(f"研报数据文件 {LATEST_REPORT_FILE} 不存在")
@@ -191,21 +186,26 @@ def load_research_reports():
 def load_financial_news():
     """加载最新的财经新闻数据"""
     try:
+        # 获取当前年月（使用中国时间）
         current_date = get_china_time()
         current_year = current_date.year
         current_month = current_date.month
         
+        # 构建当月文件名
         archive_filename = f"financial_news_archive-{current_year}-{current_month:02d}.csv"
         file_path = os.path.join(FINANCIAL_NEWS_DIR, archive_filename)
         
         if os.path.exists(file_path):
+            # 读取CSV文件
             df = pd.read_csv(file_path, encoding='utf-8-sig')
             
+            # 只取最近200条新闻
             if len(df) > 200:
                 df = df.head(200)
             
+            # 转换为字符串
             news_content = df.to_string(index=False)
-            logging.info(f"成功加载财经新闻数据文件: {file_path}，共 {len(df)} 条记录")
+            logging.info(f"成功加载财经新闻数据文件，共 {len(df)} 条记录")
             return news_content
         else:
             logging.warning(f"财经新闻数据文件 {file_path} 不存在")
@@ -217,23 +217,28 @@ def load_financial_news():
 def load_cls_news():
     """加载当前周和上一周的财联社新闻数据"""
     try:
+        # 获取当前周和上一周的信息（使用中国时间）
         current_date = get_china_time()
         current_week_num = current_date.isocalendar()[1]
         current_year = current_date.year
         
+        # 计算上一周的周数和年份
         prev_week_date = current_date - timedelta(days=7)
         prev_week_num = prev_week_date.isocalendar()[1]
         prev_year = prev_week_date.year
         
+        # 构建当前周和上一周的文件路径
         current_week_str = f"{current_year}-W{current_week_num:02d}"
         prev_week_str = f"{prev_year}-W{prev_week_num:02d}"
         
         current_file_path = os.path.join(CLS_NEWS_DIR, f"cls_{current_week_str}.md")
         prev_file_path = os.path.join(CLS_NEWS_DIR, f"cls_{prev_week_str}.md")
         
+        # 初始化内容变量
         current_week_content = ""
         prev_week_content = ""
         
+        # 尝试读取当前周的数据
         if os.path.exists(current_file_path):
             with open(current_file_path, 'r', encoding='utf-8') as f:
                 current_week_content = f.read()
@@ -241,6 +246,7 @@ def load_cls_news():
         else:
             logging.warning(f"当前周 ({current_week_str}) 财联社新闻数据文件不存在")
         
+        # 尝试读取上一周的数据
         if os.path.exists(prev_file_path):
             with open(prev_file_path, 'r', encoding='utf-8') as f:
                 prev_week_content = f.read()
@@ -248,6 +254,7 @@ def load_cls_news():
         else:
             logging.warning(f"上一周 ({prev_week_str}) 财联社新闻数据文件不存在")
         
+        # 组合两周的数据
         combined_content = ""
         
         if current_week_content:
@@ -256,6 +263,7 @@ def load_cls_news():
         if prev_week_content:
             combined_content += f"# 上一周 ({prev_week_str}) 财联社电报\n\n{prev_week_content}"
         
+        # 如果两周都没有数据，返回提示信息
         if not combined_content:
             return "暂无财联社新闻数据"
             
@@ -268,26 +276,31 @@ def load_cls_news():
 def load_market_data():
     """加载最新的国际市场数据"""
     try:
+        # 尝试加载最新的市场数据和分析
         market_data_file = os.path.join(MARKET_DATA_DIR, "global_market_data_latest.json")
         market_analysis_file = os.path.join(MARKET_DATA_DIR, "market_analysis_" + get_china_time().strftime('%Y-%m-%d') + ".md")
         
         market_data = None
         market_analysis = None
         
+        # 加载市场数据
         if os.path.exists(market_data_file):
             with open(market_data_file, 'r', encoding='utf-8') as f:
                 market_data = json.load(f)
-            logging.info(f"成功加载国际市场数据: {market_data_file}")
+            logging.info(f"成功加载国际市场数据")
         else:
             logging.warning(f"国际市场数据文件 {market_data_file} 不存在")
         
+        # 加载市场分析
         if os.path.exists(market_analysis_file):
             with open(market_analysis_file, 'r', encoding='utf-8') as f:
                 market_analysis = f.read()
-            logging.info(f"成功加载国际市场分析: {market_analysis_file}")
+            logging.info(f"成功加载国际市场分析")
         else:
+            # 尝试查找最近的分析文件
             analysis_files = [f for f in os.listdir(MARKET_DATA_DIR) if f.startswith("market_analysis_") and f.endswith(".md")]
             if analysis_files:
+                # 按日期排序，获取最新的
                 latest_file = sorted(analysis_files)[-1]
                 with open(os.path.join(MARKET_DATA_DIR, latest_file), 'r', encoding='utf-8') as f:
                     market_analysis = f.read()
@@ -307,13 +320,16 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news, mark
         return "未配置 Gemini API KEY，无法生成分析"
     
     try:
+        # 使用 Gemini 模型
         model = genai.GenerativeModel('gemini-1.5-flash')
         
+        # 获取当前中国时间格式化字符串，包含星期
         china_time = get_china_time()
         weekday_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
         weekday = weekday_names[china_time.weekday()]
         current_time = f"{china_time.strftime('%Y年%m月%d日 %H:%M')} {weekday}"
         
+        # 准备提示词
         prompt = ANALYST_PROMPT.format(
             reports_data=reports_data,
             financial_news=financial_news,
@@ -322,55 +338,53 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news, mark
             market_analysis=market_analysis
         )
         
+        # 生成分析
         logging.info("开始使用 Gemini 生成综合分析...")
+        
+        # 生成内容
         response = model.generate_content(prompt)
         
-        analysis_text = ""
         if response and hasattr(response, 'text'):
-            analysis_text = response.text
-        elif response and response.parts:
-            try:
-                analysis_text = response.parts[0].text
-            except (IndexError, AttributeError) as e:
-                 logging.error(f"无法从 response.parts 提取文本: {e}")
-                 analysis_text = "生成分析失败: 响应格式异常"
+            logging.info("成功生成综合分析")
+            return response.text
         else:
             logging.error("生成分析失败: 响应格式异常或内容为空")
-            analysis_text = "生成分析失败: 响应格式异常"
-
-        logging.info(f"成功生成综合分析，内容长度: {len(analysis_text)} 字符。")
-        return analysis_text
+            # 尝试从 response.parts 获取内容
+            try:
+                return response.parts[0].text
+            except (IndexError, AttributeError):
+                logging.error("无法从 response.parts 提取文本")
+                return "生成分析失败: 响应格式异常"
 
     except Exception as e:
-        logging.error(f"生成分析时发生异常: {str(e)}")
+        logging.error(f"生成分析失败: {str(e)}")
         return f"生成分析失败: {str(e)}"
 
 def save_analysis_to_file(analysis_content):
     """将分析报告保存到指定目录的 MD 文件中"""
-    logging.info("开始执行保存分析报告到文件的函数...")
     try:
+        # 获取当前中国时间
         china_time = get_china_time()
         date_str = china_time.strftime('%Y-%m-%d')
         time_str = china_time.strftime('%H%M%S')
 
+        # 构建目录路径: 每日报告/YYYY-MM-DD/
         report_date_dir = os.path.join(DAILY_REPORT_DIR, date_str)
-        logging.info(f"准备创建日期子目录: {report_date_dir}")
         os.makedirs(report_date_dir, exist_ok=True)
-        logging.info("日期子目录确认完毕。")
 
+        # 构建完整文件路径
         file_name = f"analysis_report_{time_str}.md"
         file_path = os.path.join(report_date_dir, file_name)
-        logging.info(f"最终文件路径为: {file_path}")
 
-        logging.info("开始写入文件...")
+        # 写入文件
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(analysis_content)
-        logging.info(f"文件写入成功: {file_path}")
 
+        logging.info(f"分析报告已成功保存到: {file_path}")
         return True
 
     except Exception as e:
-        logging.error(f"！！！保存分析报告到文件失败: {str(e)}", exc_info=True)
+        logging.error(f"保存分析报告到文件失败: {str(e)}")
         return False
 
 def send_analysis_report(analysis):
@@ -380,14 +394,16 @@ def send_analysis_report(analysis):
         return False
     
     try:
+        # 获取中国时间并格式化
         china_time = get_china_time()
         time_str = china_time.strftime('%Y-%m-%d %H:%M')
         
+        # 构建推送标题和内容
         title = f"投资数据综合AI分析 - {time_str} (中国时间)"
         content = analysis
         short = "投资数据综合AI分析已生成"
         
-        logging.info("准备发送报告到方糖...")
+        # 发送到方糖
         return send_to_fangtang(title, content, short)
     
     except Exception as e:
@@ -396,53 +412,40 @@ def send_analysis_report(analysis):
 
 def process_all_data():
     """处理所有数据，生成、保存并发送综合分析"""
-    logging.info("="*20 + " 开始处理所有数据 " + "="*20)
+    logging.info("开始处理所有数据...")
     
-    logging.info("步骤 1/5: 加载研报数据...")
+    # 加载研报数据
     reports_data = load_research_reports() or "暂无研报数据"
-    logging.info(f"研报数据加载完毕. 内容摘要 (前100字符): {reports_data[:100].strip()}")
     
-    logging.info("步骤 2/5: 加载财经新闻数据...")
+    # 加载财经新闻数据
     financial_news = load_financial_news()
-    logging.info(f"财经新闻加载完毕. 内容摘要 (前100字符): {financial_news[:100].strip()}")
-
-    logging.info("步骤 3/5: 加载财联社新闻数据...")
-    cls_news = load_cls_news()
-    logging.info(f"财联社新闻加载完毕. 内容摘要 (前100字符): {cls_news[:100].strip()}")
     
-    logging.info("步骤 4/5: 加载国际市场数据...")
+    # 加载财联社新闻数据
+    cls_news = load_cls_news()
+    
+    # 加载国际市场数据
     market_data, market_analysis = load_market_data()
     market_analysis_str = str(market_analysis) if market_analysis else "暂无国际市场分析数据"
-    logging.info(f"国际市场数据加载完毕. 内容摘要 (前100字符): {market_analysis_str[:100].strip()}")
-
-    logging.info("步骤 5/5: 生成综合分析...")
+    
+    # 生成综合分析
     analysis = generate_comprehensive_analysis(reports_data, financial_news, cls_news, market_analysis_str)
     
-    if analysis and "生成分析失败" not in analysis and len(analysis) > 50:
-        logging.info(f"成功获取有效分析报告，长度为 {len(analysis)}。准备保存和推送。")
-        
+    # 只有在成功生成分析报告时才进行保存和推送
+    if analysis and "生成分析失败" not in analysis:
         # 1. 保存分析报告到文件
-        logging.info("--- 开始保存文件流程 ---")
         save_success = save_analysis_to_file(analysis)
-        if save_success:
-            logging.info("文件保存流程成功结束。")
-        else:
-            logging.error("！！！文件保存流程失败，请检查上方日志。")
+        if not save_success:
+            logging.error("分析报告保存失败，但仍会尝试推送。")
 
         # 2. 发送分析报告到方糖
-        logging.info("--- 开始方糖推送流程 ---")
         push_success = send_analysis_report(analysis)
         if push_success:
-            logging.info("方糖推送流程成功结束。")
+            logging.info("综合分析报告已成功推送")
         else:
-            logging.error("！！！方糖推送流程失败。")
+            logging.error("综合分析报告推送失败")
     else:
-        logging.error(f"！！！未生成有效的综合分析报告，跳过保存和推送。获取到的内容: {analysis[:200]}")
-
-    logging.info("="*20 + " 所有数据处理完毕 " + "="*20)
-
+        logging.error("未生成有效的综合分析报告，跳过保存和推送")
 
 if __name__ == "__main__":
-    logging.info("脚本启动...")
+    # 处理所有数据
     process_all_data()
-    logging.info("脚本执行完毕。")
