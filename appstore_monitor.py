@@ -419,27 +419,29 @@ def extract_stock_recommendations(report_path):
         with open(report_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        table_pattern = re.compile(r"\|\s*股票代码\s*\|\s*公司名称\s*\|.*?\n(?:\|:?-+:?\|:?-+:?\|.*?\n)((?:\|.*?\|\n)+)", re.DOTALL)
-        match = table_pattern.search(content)
-        
-        if not match:
-            logging.error("在报告中找不到格式正确的股票推荐表。")
-            return None
-            
-        table_content = match.group(1).strip()
-        logging.info(f"成功匹配到表格内容:\n---\n{table_content}\n---")
-        
-        rows = [row for row in table_content.split('\n') if row.strip()]
+        # 直接使用逐行扫描方法，查找包含6位股票代码的表格行
+        logging.info("扫描报告中的股票推荐表格...")
+        lines = content.split('\n')
         stocks = []
-        for row in rows:
-            cells = [c.strip() for c in row.split('|') if c.strip()]
-            if len(cells) >= 2 and re.match(r'^\d{6}$', cells[0]):
-                stocks.append({'code': cells[0], 'name': cells[1]})
-            else:
-                logging.warning(f"跳过格式不正确的行: {row}")
-
+        found_table_header = False
+        
+        for line in lines:
+            # 检查是否是表格头
+            if '股票代码' in line and '公司名称' in line and '|' in line:
+                found_table_header = True
+                logging.info("找到股票推荐表格头部")
+                continue
+            
+            # 如果找到了表格头，开始处理表格行
+            if '|' in line:
+                cells = [c.strip() for c in line.split('|') if c.strip()]
+                # 检查第一列是否是6位数字的股票代码
+                if len(cells) >= 2 and re.match(r'^\d{6}$', cells[0]):
+                    stocks.append({'code': cells[0], 'name': cells[1]})
+                    logging.debug(f"找到股票: {cells[0]} - {cells[1]}")
+        
         if not stocks:
-            logging.error("未能从表中解析任何有效的股票。")
+            logging.error("在报告中找不到任何股票推荐。")
             return None
             
         logging.info(f"成功提取 {len(stocks)} 支推荐股票: {[s['code'] for s in stocks]}")
