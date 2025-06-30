@@ -328,7 +328,7 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news, mark
     
     try:
         # 使用 Gemini 模型
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         # 获取当前中国时间格式化字符串，包含星期
         china_time = get_china_time()
