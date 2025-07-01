@@ -93,7 +93,7 @@ ANALYST_PROMPT = """
 * **催化剂时效性**: 公司是否与近期热点新闻或政策直接相关，具备短期催化效应？
 
 5. **投资组合构建与风险管理 (Portfolio Construction & Risk Management):**
-* 最终构建一个包含8-12只股票的投资组合。
+* 最终构建一个包含8-10只股票的投资组合。
 * 组合内应适当分散，覆盖你识别出的主要核心主题，避免在单一赛道上过度集中。
 * 为每只入选的股票，明确其在组合中的定位（例如："核心配置"代表逻辑最强、确定性高；"卫星配置"代表弹性较大、属于博取更高收益的部分）。
 * 尽量不要选择688开头的股票，688是科创板股票。
@@ -328,6 +328,10 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news, mark
             market_analysis=market_analysis
         )
         logging.info("开始使用 Gemini 生成综合分析... Prompt 总长度: " + str(len(prompt)))
+        
+        # 增加30秒等待，防止API频率过快
+        logging.info("等待30秒，防止API频率过快...")
+        time.sleep(30)
         
         response = model.generate_content(prompt)
         
@@ -571,6 +575,10 @@ def analyze_stocks_in_batch(all_stock_data):
         model = genai.GenerativeModel('gemini-2.5-flash')
         logging.info("正在向 Gemini API 发送批量分析请求 (这可能需要一些时间)...")
         start_time = time.time()
+        
+        # 增加30秒等待，防止API频率过快
+        logging.info("等待30秒，防止API频率过快...")
+        time.sleep(30)
         
         response = model.generate_content(full_prompt)
         
