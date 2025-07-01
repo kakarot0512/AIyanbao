@@ -34,6 +34,7 @@ MARKET_DATA_DIR = "国际市场数据" # 国际市场数据目录
 DAILY_REPORT_DIR = "每日报告" # 每日报告输出目录
 ANALYSIS_RESULT_DIR = "分析结果" # Check分析结果目录
 RAW_DATA_DIR = "股票原始数据" # 股票原始数据目录
+GEMINI_PROMPT_DIR = "Gemini发送内容" # Gemini发送内容存储目录
 
 # 创建数据目录
 logging.info("正在检查并创建所需的数据目录...")
@@ -42,6 +43,7 @@ os.makedirs(MARKET_DATA_DIR, exist_ok=True)
 os.makedirs(DAILY_REPORT_DIR, exist_ok=True)
 os.makedirs(ANALYSIS_RESULT_DIR, exist_ok=True)
 os.makedirs(RAW_DATA_DIR, exist_ok=True)
+os.makedirs(GEMINI_PROMPT_DIR, exist_ok=True)
 logging.info("数据目录检查完毕。")
 
 
@@ -172,6 +174,43 @@ def send_to_fangtang(title, content, short):
     except Exception as e:
         logging.error(f"方糖推送异常: {str(e)}")
         return False
+
+def save_gemini_prompt_to_file(prompt_content, prompt_type="comprehensive_analysis"):
+    """将发送给Gemini的完整内容保存到MD文件中"""
+    logging.info(f"准备保存{prompt_type}的Gemini发送内容到文件...")
+    try:
+        china_time = get_china_time()
+        date_str = china_time.strftime('%Y-%m-%d')
+        time_str = china_time.strftime('%H%M%S')
+
+        prompt_date_dir = os.path.join(GEMINI_PROMPT_DIR, date_str)
+        os.makedirs(prompt_date_dir, exist_ok=True)
+        logging.info(f"Gemini发送内容将保存在目录: {prompt_date_dir}")
+
+        file_name = f"gemini_prompt_{prompt_type}_{time_str}.md"
+        file_path = os.path.join(prompt_date_dir, file_name)
+
+        # 添加文件头部信息
+        header = f"""# Gemini 发送内容记录
+
+**发送时间:** {china_time.strftime('%Y-%m-%d %H:%M:%S')} (中国时间)
+**内容类型:** {prompt_type}
+**内容长度:** {len(prompt_content)} 字符
+
+---
+
+"""
+        
+        full_content = header + prompt_content
+
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(full_content)
+
+        logging.info(f"Gemini发送内容已成功保存到: {file_path}")
+        return file_path
+    except Exception as e:
+        logging.error(f"保存Gemini发送内容到文件失败: {str(e)}")
+        return None
 
 def load_research_reports():
     """加载最新的研报数据"""
@@ -328,6 +367,9 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news, mark
             market_analysis=market_analysis
         )
         logging.info("开始使用 Gemini 生成综合分析... Prompt 总长度: " + str(len(prompt)))
+        
+        # 保存发送给Gemini的完整内容
+        save_gemini_prompt_to_file(prompt, "comprehensive_analysis")
         
         # 增加30秒等待，防止API频率过快
         logging.info("等待30秒，防止API频率过快...")
@@ -571,6 +613,10 @@ def analyze_stocks_in_batch(all_stock_data):
 """
     full_prompt = prompt_header + prompt_data_section + prompt_footer
     logging.info(f"构建的批量分析 Prompt 总长度为: {len(full_prompt)} 字符。")
+    
+    # 保存发送给Gemini的完整内容
+    save_gemini_prompt_to_file(full_prompt, "stock_batch_analysis")
+    
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
         logging.info("正在向 Gemini API 发送批量分析请求 (这可能需要一些时间)...")
