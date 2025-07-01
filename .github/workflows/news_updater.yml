@@ -60,6 +60,7 @@ jobs:
           mkdir -p 每日报告
           mkdir -p 分析结果
           mkdir -p 股票原始数据
+          mkdir -p Gemini发送内容
 
       # 第七步：运行国际市场数据分析
       - name: Run international market data analysis
@@ -86,6 +87,7 @@ jobs:
           git add "分析结果/*.json"
           git add "分析结果/*.md"
           git add "股票原始数据/**/*.csv"
+          git add "Gemini发送内容/**/*.md"
           
           git diff --staged --quiet || {
             git fetch origin main
@@ -101,6 +103,7 @@ jobs:
             git add "分析结果/*.json"
             git add "分析结果/*.md"
             git add "股票原始数据/**/*.csv"
+            git add "Gemini发送内容/**/*.md"
             git commit -m "数据自动更新 $(date +'%Y-%m-%d %H:%M:%S')"
             git push || git push --force
           }
