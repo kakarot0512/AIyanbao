@@ -386,7 +386,7 @@ def summarize_cls_news_with_ai(cls_news_content):
     if not GEMINI_API_KEY:
         logging.warning("未设置 Gemini API KEY，跳过财联社新闻摘要")
         return "财联社新闻摘要功能未启用（缺少API KEY）"
-    if not cls_news_content or "暂无" in cls_news_content:
+    if not cls_news_content:
         logging.info("财联社新闻内容为空，无需摘要")
         return "无财联社新闻可供摘要"
     
