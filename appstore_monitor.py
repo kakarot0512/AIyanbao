@@ -669,10 +669,11 @@ def analyze_stocks_in_batch(all_stock_data):
 # 分析与输出要求
 1. **严格遵守**: 你必须严格按照上述排除标准和特殊情况处理规则，对输入数据中的 **每一支股票** 进行分析并形成一个JSON对象。
 2. **完整性保证**: 返回的JSON数组 **必须** 包含与输入数据中相同数量的对象。**绝对不要遗漏任何一支股票**。
-3. **强制格式**: 数组中每个对象的结构 **必须** 如下所示。`code` 字段至关重要。
+3. **强制格式**: 数组中每个对象的结构 **必须** 如下所示。`code` 和 `name` 字段至关重要。
 ```json
 {
 "code": "原始股票代码, 例如 '600519'",
+"name": "公司名称, 例如 '贵州茅台'",
 "should_exclude": boolean,
 "reason": "仅在 should_exclude 为 true 时填写此字段，从'近期明显下跌走势'、'涨幅巨大接近泡沫'中选择一个。如果should_exclude为false，此字段应为空字符串或null。",
 "analysis": "提供一句话的简明扼要的分析，解释你做出该判断的核心依据。对于数据不完整的股票，should_exclude应为false，并在此处说明'数据不完整，建议用户自行核实相关财务报表。'"
@@ -716,6 +717,14 @@ def analyze_stocks_in_batch(all_stock_data):
         if not isinstance(results_list, list):
             logging.error(f"响应格式无效: 期望是列表，但得到 {type(results_list)}")
             return {}
+        
+        # 确保每个结果包含公司名称
+        for result in results_list:
+            if "name" not in result:
+                for stock in all_stock_data:
+                    if stock["code"] == result["code"]:
+                        result["name"] = stock["name"]
+                        break
         
         results_map = {str(result.get("code")): result for result in results_list if result.get("code")}
         
