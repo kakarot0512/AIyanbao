@@ -277,7 +277,7 @@ def load_financial_news():
         return "加载财经新闻数据失败"
 
 def load_cls_news():
-    """加载当前周和上一周的财联社新闻数据"""
+    """加载当前周的全部新闻和上一周的重要新闻，并限制总行数不超过3000行"""
     logging.info(f"尝试从 {CLS_NEWS_DIR} 加载财联社新闻数据...")
     try:
         current_date = get_china_time()
@@ -298,8 +298,9 @@ def load_cls_news():
         logging.info(f"查找上一周文件: {prev_file_path}")
 
         current_week_content = ""
-        prev_week_content = ""
+        prev_week_important_content = ""
 
+        # 加载当前周的全部新闻
         if os.path.exists(current_file_path):
             with open(current_file_path, 'r', encoding='utf-8') as f:
                 current_week_content = f.read()
@@ -307,22 +308,35 @@ def load_cls_news():
         else:
             logging.warning(f"当前周 ({current_week_str}) 财联社新闻数据文件不存在")
 
+        # 加载上一周的重要新闻
         if os.path.exists(prev_file_path):
             with open(prev_file_path, 'r', encoding='utf-8') as f:
                 prev_week_content = f.read()
-            logging.info(f"成功加载上一周 ({prev_week_str}) 财联社新闻，内容长度: {len(prev_week_content)}")
+                # 提取重要新闻（标红部分）
+                important_news = []
+                for line in prev_week_content.split('\n'):
+                    if "**🔴 重要电报**" in line or "**" in line:  # 假设重要新闻以 ** 标记
+                        important_news.append(line)
+                prev_week_important_content = "\n".join(important_news)
+            logging.info(f"成功加载上一周 ({prev_week_str}) 财联社重要新闻，内容长度: {len(prev_week_important_content)}")
         else:
             logging.warning(f"上一周 ({prev_week_str}) 财联社新闻数据文件不存在")
 
         combined_content = ""
         if current_week_content:
             combined_content += f"# 当前周 ({current_week_str}) 财联社电报\n\n{current_week_content}\n\n"
-        if prev_week_content:
-            combined_content += f"# 上一周 ({prev_week_str}) 财联社电报\n\n{prev_week_content}"
+        if prev_week_important_content:
+            combined_content += f"# 上一周 ({prev_week_str}) 财联社重要电报\n\n{prev_week_important_content}"
 
         if not combined_content:
             logging.warning("未找到任何财联社新闻数据")
             return "暂无财联社新闻数据"
+        
+        # 限制总行数不超过3000行
+        lines = combined_content.split('\n')
+        if len(lines) > 3000:
+            combined_content = '\n'.join(lines[:3000])
+            logging.warning(f"财联社新闻数据超过3000行，已截取前3000行。原始行数: {len(lines)}")
         
         logging.info(f"成功合并财联社新闻数据，总长度: {len(combined_content)}")
         return combined_content
