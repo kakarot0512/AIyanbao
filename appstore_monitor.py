@@ -66,8 +66,7 @@ CLS_SUMMARY_PROMPT = """
 1.  **聚焦关键**: 只关注宏观经济政策、重要产业动向（如价格变动、技术突破）、关键公司重大公告（如业绩预告、并购重组）、以及可能影响市场情绪的重大事件。
 2.  **过滤噪音**: 忽略常规的市场波动描述、重复信息、无明确影响的传闻、以及过于细节的技术分析。
 3.  **高度概括**: 使用简洁、精炼的语言进行总结。每个要点都应直击核心。
-4.  **保留出处**: 在总结的每个要点后，用括号注明来源是“财联社”，以保持信息溯源性。
-5.  **输出格式**: 以无序列表（bullet points）的形式输出总结。
+4.  **输出格式**: 以无序列表（bullet points）的形式输出总结。
 
 # 待处理的原始新闻内容
 {cls_news_content}
@@ -535,26 +534,28 @@ def extract_stock_recommendations(report_path):
         with open(report_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # 直接使用逐行扫描方法，查找包含6位股票代码的表格行
-        logging.info("扫描报告中的股票推荐表格...")
+        # 直接使用逐行扫描方法，查找包含6位股票代码的行
+        logging.info("扫描报告中的股票推荐...")
         lines = content.split('\n')
         stocks = []
         found_table_header = False
         
         for line in lines:
             # 检查是否是表格头
-            if '股票代码' in line and '公司名称' in line and '|' in line:
+            if '股票代码' in line and '公司名称' in line:
                 found_table_header = True
                 logging.info("找到股票推荐表格头部")
                 continue
             
-            # 如果找到了表格头，开始处理表格行
-            if '|' in line:
-                cells = [c.strip() for c in line.split('|') if c.strip()]
-                # 检查第一列是否是6位数字的股票代码
-                if len(cells) >= 2 and re.match(r'^\d{6}$', cells[0]):
-                    stocks.append({'code': cells[0], 'name': cells[1]})
-                    logging.debug(f"找到股票: {cells[0]} - {cells[1]}")
+            # 查找6位数字的股票代码
+            matches = re.findall(r'\b\d{6}\b', line)
+            if matches:
+                for code in matches:
+                    # 假设公司名称在股票代码之后，用空格或其他分隔符隔开
+                    name_part = line.split(code, 1)[-1].strip()
+                    name = re.sub(r'[^\w\s]', '', name_part.split()[0]) if name_part else "未知公司"
+                    stocks.append({'code': code, 'name': name})
+                    logging.debug(f"找到股票: {code} - {name}")
         
         if not stocks:
             logging.error("在报告中找不到任何股票推荐。")
