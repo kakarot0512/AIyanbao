@@ -54,6 +54,26 @@ if GEMINI_API_KEY:
 else:
     logging.warning("未找到 GEMINI_API_KEY 环境变量，AI 相关功能将不可用。")
 
+# 新增：财联社新闻摘要专用Prompt
+CLS_SUMMARY_PROMPT = """
+# 角色
+你是一位顶级的金融信息分析师和新闻编辑。
+
+# 任务
+你的任务是快速阅读并提炼以下提供的“财联社”实时电报新闻内容。你需要从大量、快速滚动的信息流中，精准地抽取出对A股市场可能产生 **实质性影响** 的核心信息。
+
+# 指导原则
+1.  **聚焦关键**: 只关注宏观经济政策、重要产业动向（如价格变动、技术突破）、关键公司重大公告（如业绩预告、并购重组）、以及可能影响市场情绪的重大事件。
+2.  **过滤噪音**: 忽略常规的市场波动描述、重复信息、无明确影响的传闻、以及过于细节的技术分析。
+3.  **高度概括**: 使用简洁、精炼的语言进行总结。每个要点都应直击核心。
+4.  **保留出处**: 在总结的每个要点后，用括号注明来源是“财联社”，以保持信息溯源性。
+5.  **输出格式**: 以无序列表（bullet points）的形式输出总结。
+
+# 待处理的原始新闻内容
+{cls_news_content}
+"""
+
+
 # 综合分析师角色描述
 ANALYST_PROMPT = """
 # 角色
@@ -63,7 +83,7 @@ ANALYST_PROMPT = """
 当前时间为{current_time}。你正在进行投研的准备工作。你的信息源包括：
 1. 近期（过去一周）发布的A股券商研究报告。
 2. 最新的宏观经济数据和财经新闻。
-3. 财联社电报等实时市场资讯。
+3. 财联社电报等实时市场资讯的 **核心摘要**。
 4. 全球主要股指、大宗商品、外汇和利率等国际市场数据，包括黄金、原油、铜等大宗商品价格走势，美元指数，中美国债收益率，以及A股主要指数表现。
 
 你知道这些信息充满了"噪音"，且可能存在滞后性、片面性甚至错误。因此，你的核心价值在于 **快速过滤、精准提炼、独立思考和深度甄别**，而非简单复述。
@@ -74,7 +94,7 @@ ANALYST_PROMPT = """
 **分析框架 (请严格按步骤执行):**
 
 1. **市场关键信息梳理与定调 (Market Intelligence Briefing & Tone Setting):**
-* **此为首要步骤。** 请首先从所有参考资料（研报、新闻、电报、国际市场数据）中，提炼出对今日乃至近期A股投资有 **重大影响** 的关键信息。
+* **此为首要步骤。** 请首先从所有参考资料（研报、新闻、财联社摘要、国际市场数据）中，提炼出对今日乃至近期A股投资有 **重大影响** 的关键信息。
 * 将这些信息分类整理为以下三部分，并简要评估其潜在影响（利好[+]、利空[-]、中性或不确定[~]）：
 * **宏观与政策动态:** 如重要的经济数据发布、产业政策、监管动向、国际关系等。特别关注国际市场分析中提供的全球市场情绪指标，如VIX指数、美元指数等。
 * **产业与科技前沿:** 如关键技术突破（如固态电池、AI模型）、产业链价格异动、重要行业会议结论等。**特别关注：重要商品期货（如原油、铜、黄金）及工业原料（如锂、稀土）、中美国债利率的价格趋势，并分析其对上下游产业链（如采掘、冶炼、制造、化工）的成本和利润传导效应。**
@@ -140,7 +160,7 @@ ANALYST_PROMPT = """
 ## 2. 财经新闻汇总
 {financial_news}
 
-## 3. 财联社电报
+## 3. 财联社电报 (核心摘要)
 {cls_news}
 
 ## 4. 国际市场分析
@@ -347,7 +367,42 @@ def load_market_data():
         logging.error(f"加载国际市场数据失败: {e}")
         return None, None
 
-def generate_comprehensive_analysis(reports_data, financial_news, cls_news, market_analysis):
+def summarize_cls_news_with_ai(cls_news_content):
+    """使用AI摘要财联社新闻"""
+    if not GEMINI_API_KEY:
+        logging.warning("未设置 Gemini API KEY，跳过财联社新闻摘要")
+        return "财联社新闻摘要功能未启用（缺少API KEY）"
+    if not cls_news_content or "暂无" in cls_news_content:
+        logging.info("财联社新闻内容为空，无需摘要")
+        return "无财联社新闻可供摘要"
+    
+    logging.info("开始使用 Gemini 摘要财联社新闻...")
+    try:
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        prompt = CLS_SUMMARY_PROMPT.format(cls_news_content=cls_news_content)
+        
+        # 保存发送给Gemini的摘要prompt
+        save_gemini_prompt_to_file(prompt, "cls_summary")
+        
+        # 增加等待，防止API频率过快
+        logging.info("等待15秒，防止API频率过快...")
+        time.sleep(15)
+
+        response = model.generate_content(prompt)
+        
+        if response and hasattr(response, 'text'):
+            summary = response.text
+            logging.info(f"成功生成财联社新闻摘要，摘要长度: {len(summary)} 字符")
+            return summary
+        else:
+            logging.error("摘要财联社新闻失败: 响应格式异常或内容为空。")
+            logging.debug(f"原始响应: {response}")
+            return "摘要财联社新闻时发生错误，将使用原始数据。"
+    except Exception as e:
+        logging.error(f"摘要财联社新闻时发生异常: {str(e)}")
+        return f"摘要财联社新闻时发生异常，将使用原始数据。错误: {str(e)}"
+
+def generate_comprehensive_analysis(reports_data, financial_news, cls_news_summary, market_analysis):
     """使用 Gemini 模型生成综合分析报告"""
     if not GEMINI_API_KEY:
         logging.warning("未设置 Gemini API KEY，跳过生成分析")
@@ -362,7 +417,7 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news, mark
         prompt = ANALYST_PROMPT.format(
             reports_data=reports_data,
             financial_news=financial_news,
-            cls_news=cls_news,
+            cls_news=cls_news_summary, # 使用摘要后的新闻
             current_time=current_time,
             market_analysis=market_analysis
         )
@@ -786,27 +841,37 @@ def process_all_data():
     logging.info("========= 开始新一轮数据处理流程 =========")
     logging.info("=====================================")
     
-    # 加载数据
+    # 步骤 1: 加载所有原始数据
+    logging.info("---------- 步骤 1/5: 加载所有原始数据 ----------")
     reports_data = load_research_reports() or "暂无研报数据"
     financial_news = load_financial_news()
-    cls_news = load_cls_news()
-    _, market_analysis = load_market_data() # market_data 目前未使用
+    cls_news_raw = load_cls_news()
+    _, market_analysis = load_market_data()
     market_analysis_str = market_analysis if market_analysis else "暂无国际市场分析数据"
 
-    # 生成主报告
-    logging.info("---------- 生成主分析报告 ----------")
-    analysis = generate_comprehensive_analysis(reports_data, financial_news, cls_news, market_analysis_str)
+    # 步骤 2: 使用AI摘要财联社新闻
+    logging.info("---------- 步骤 2/5: 使用AI摘要财联社新闻 ----------")
+    summarized_cls_news = summarize_cls_news_with_ai(cls_news_raw)
+    # 注意：如果摘要失败，函数会返回一条错误信息，这条信息也会被包含在最终的prompt里，让主模型知晓此情况。
+
+    # 步骤 3: 生成主分析报告
+    logging.info("---------- 步骤 3/5: 生成主分析报告 ----------")
+    analysis = generate_comprehensive_analysis(
+        reports_data, 
+        financial_news, 
+        summarized_cls_news, 
+        market_analysis_str
+    )
 
     if analysis and "生成分析失败" not in analysis:
         logging.info("主分析报告生成成功。")
-        # 1. 保存主报告
+        # 步骤 4: 保存报告并执行Check分析
         saved_file_path = save_analysis_to_file(analysis)
         if not saved_file_path:
             logging.error("主分析报告保存失败，但仍会尝试推送。")
         
-        # 2. 执行Check分析
         if saved_file_path and os.path.exists(saved_file_path):
-            logging.info("---------- 开始执行Check分析流程 ----------")
+            logging.info("---------- 步骤 4/5: 开始执行Check分析流程 ----------")
             check_analysis_success = perform_stock_check_analysis(saved_file_path)
             if check_analysis_success:
                 logging.info("Check分析流程成功完成，报告已补充。")
@@ -815,8 +880,8 @@ def process_all_data():
         else:
              logging.warning("由于主报告保存失败或未找到，跳过Check分析流程。")
              
-        # 3. 推送报告
-        logging.info("---------- 推送最终报告 ----------")
+        # 步骤 5: 推送最终报告
+        logging.info("---------- 步骤 5/5: 推送最终报告 ----------")
         final_analysis_content = analysis
         if saved_file_path and os.path.exists(saved_file_path):
             try:
