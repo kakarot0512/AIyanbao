@@ -1,0 +1,45 @@
+name: 自动清理旧数据
+
+on:
+  # 使用 cron 语法，在每天 UTC 时间的凌晨2点运行
+  schedule:
+    - cron: '0 2 * * *'
+  # 也允许手动触发
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      # 第一步：下载仓库代码
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 第二步：设置Python环境
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # 第三步：运行清理脚本
+      - name: Run cleanup script for old Gemini folders
+        run: python cleanup_gemini_folders.py
+
+      # 第四步：提交删除操作
+      - name: Commit and push deletions
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # 检查是否有任何暂存的更改（即被删除的文件夹）
+          # `git add .` 会将所有更改（包括删除）添加到暂存区
+          git add .
+          
+          # 如果暂存区有变化，则提交并推送
+          if ! git diff --staged --quiet; then
+            echo "发现旧文件已被删除，正在提交更改..."
+            git commit -m "定时任务: 清理10天前的Gemini发送内容"
+            git push
+          else
+            echo "没有需要清理的旧文件。"
+          fi
