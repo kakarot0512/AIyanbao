@@ -249,6 +249,7 @@ def analyze_stocks_in_batch(all_stock_data):
 ```json
 {
   "code": "原始股票代码, 例如 '600519'",
+  "name": "原始股票名字, 例如 '贵州茅台'",
   "should_exclude": boolean,
   "reason": "仅在 should_exclude 为 true 时填写此字段，从'近期明显下跌走势'、'涨幅巨大接近泡沫'、'财务有严重问题'中选择一个。如果should_exclude为false，此字段应为空字符串或null。",
   "analysis": "提供一句话的简明扼要的分析，解释你做出该判断的核心依据。对于数据不完整的股票，should_exclude应为false，并在此处说明‘数据不完整，建议用户自行核实相关财务报表。’"
