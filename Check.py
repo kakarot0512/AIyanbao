@@ -98,53 +98,63 @@ def get_latest_report():
         return None
 
 def extract_stock_recommendations(report_path):
-    """从 Markdown 报告中解析并提取推荐的股票列表。"""
+    """从 Markdown 报告中解析并提取推荐的股票列表 (采用更稳健的逐行解析法)。"""
     logging.info(f"正在从报告中提取股票推荐: {report_path}...")
     try:
-        # 使用 'utf-8-sig' 来自动处理可能存在的BOM（字节顺序标记）
         with open(report_path, 'r', encoding='utf-8-sig') as f:
-            content = f.read()
-        
-        # 优化后的正则表达式，对分隔线的匹配更严格，以提高准确性
-        # 1. 匹配表头，必须包含“股票代码”和“公司名称”
-        # 2. 匹配分隔线，要求每个单元格至少包含 '---'
-        # 3. 捕获随后的所有数据行
-        table_pattern = re.compile(
-            r"\|\s*股票代码\s*\|\s*公司名称\s*\|.*?\n"  # Header row
-            r"\s*\|(?:\s*:?---+:?\s*\|)+\s*\n"           # Separator row
-            r"((?:\|.*?\n)+)"                          # Data rows (capture group 1)
-        )
-        match = table_pattern.search(content)
-        if not match:
-            logging.error("在报告中找不到格式正确的股票推荐表。请确保表头包含'股票代码'和'公司名称'，且下方有'|:---|:---|'格式的分隔线。")
-            return None
-        
-        table_content = match.group(1).strip()
-        rows = [row for row in table_content.split('\n') if row.strip()]
-        stocks = []
-        for row in rows:
-            # 通过切片 [1:-1] 移除因行首尾的 '|' 字符分割后产生的空字符串
-            cells = [c.strip() for c in row.split('|')[1:-1]]
+            lines = f.readlines()
 
-            if len(cells) < 2:
-                logging.warning(f"跳过格式不正确的行（列数不足）: {row}")
+        stocks = []
+        in_table = False
+        header_found = False
+
+        for line in lines:
+            # FIX: Sanitize line by replacing non-breaking spaces (U+00A0) and stripping whitespace.
+            # This is crucial for handling text copied from web pages or rich text editors.
+            line = line.replace('\u00A0', ' ').strip()
+            
+            if not line:
+                continue
+            
+            # 步骤 1: 寻找表头
+            if "股票代码" in line and "公司名称" in line and line.startswith('|'):
+                header_found = True
                 continue
 
-            stock_code = cells[0]
-            stock_name = cells[1]
-            
-            if re.match(r'^\d{6}$', stock_code):
-                # 即使 stock_name 为空字符串，也先添加，后续流程会尝试补充
-                stocks.append({'code': stock_code, 'name': stock_name})
-            else:
-                logging.warning(f"跳过包含无效股票代码的行: {row}")
+            # 步骤 2: 找到表头后，寻找分隔线，它标志着表格内容的开始
+            if header_found and not in_table:
+                if re.match(r'^\s*\|(?:\s*:?---+:?\s*\|)+\s*$', line):
+                    in_table = True
+                continue
 
+            # 步骤 3: 如果处于表格内部，开始解析数据行
+            if in_table:
+                if line.startswith('|') and line.endswith('|'):
+                    cells = [c.strip() for c in line.split('|')[1:-1]]
+                    
+                    if len(cells) >= 2:
+                        stock_code = cells[0]
+                        stock_name = cells[1]
+                        
+                        if re.match(r'^\d{6}$', stock_code):
+                            stocks.append({'code': stock_code, 'name': stock_name})
+                        else:
+                            # This row might be malformed or the end of the table data
+                            logging.warning(f"行中发现无效股票代码，停止解析表格: {line}")
+                            break # Stop processing further lines in the table
+                    else:
+                        logging.warning(f"跳过格式不正确的行 (列数不足): {line}")
+                else:
+                    # 如果某行不再是表格行格式，则认为表格已结束
+                    break
+        
         if not stocks:
-            logging.error("未能从表中解析任何有效的股票。")
+            logging.error("在报告中找不到格式正确的股票推荐表或未能解析任何行。")
             return None
             
         logging.info(f"成功提取 {len(stocks)} 支推荐股票。")
         return stocks
+
     except Exception as e:
         logging.error(f"提取股票推荐时发生错误: {e}")
         return None
