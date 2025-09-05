@@ -101,19 +101,29 @@ def extract_stock_recommendations(report_path):
     """从 Markdown 报告中解析并提取推荐的股票列表。"""
     logging.info(f"正在从报告中提取股票推荐: {report_path}...")
     try:
-        with open(report_path, 'r', encoding='utf-8') as f:
+        # 使用 'utf-8-sig' 来自动处理可能存在的BOM（字节顺序标记）
+        with open(report_path, 'r', encoding='utf-8-sig') as f:
             content = f.read()
         
-        table_pattern = re.compile(r"\|\s*股票代码\s*\|\s*公司名称\s*\|.*?\n(?:\|:?-+:?\|:?-+:?\|.*?\n)((?:\|.*?\|\n)+)", re.DOTALL)
+        # 优化后的正则表达式，对分隔线的匹配更严格，以提高准确性
+        # 1. 匹配表头，必须包含“股票代码”和“公司名称”
+        # 2. 匹配分隔线，要求每个单元格至少包含 '---'
+        # 3. 捕获随后的所有数据行
+        table_pattern = re.compile(
+            r"\|\s*股票代码\s*\|\s*公司名称\s*\|.*?\n"  # Header row
+            r"\s*\|(?:\s*:?---+:?\s*\|)+\s*\n"           # Separator row
+            r"((?:\|.*?\n)+)"                          # Data rows (capture group 1)
+        )
         match = table_pattern.search(content)
         if not match:
-            logging.error("在报告中找不到格式正确的股票推荐表。")
+            logging.error("在报告中找不到格式正确的股票推荐表。请确保表头包含'股票代码'和'公司名称'，且下方有'|:---|:---|'格式的分隔线。")
             return None
         
         table_content = match.group(1).strip()
         rows = [row for row in table_content.split('\n') if row.strip()]
         stocks = []
         for row in rows:
+            # 通过切片 [1:-1] 移除因行首尾的 '|' 字符分割后产生的空字符串
             cells = [c.strip() for c in row.split('|')[1:-1]]
 
             if len(cells) < 2:
@@ -124,6 +134,7 @@ def extract_stock_recommendations(report_path):
             stock_name = cells[1]
             
             if re.match(r'^\d{6}$', stock_code):
+                # 即使 stock_name 为空字符串，也先添加，后续流程会尝试补充
                 stocks.append({'code': stock_code, 'name': stock_name})
             else:
                 logging.warning(f"跳过包含无效股票代码的行: {row}")
@@ -422,3 +433,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
