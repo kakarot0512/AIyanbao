@@ -19,14 +19,15 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(
 
 # !!! 重要：请在此处设置您的 Gemini API 密钥。!!!
 # 如果没有有效的 API 密钥，脚本将无法工作。
-GEMINI_API_KEY = "YOUR_API_KEY_HERE"  # <--- 在这里替换成你的真实密钥
+# 您可以将其设置为环境变量 GEMINI_API_KEY，或直接在下面替换 "YOUR_API_KEY_HERE"
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_API_KEY_HERE")
 
 # 脚本设计为始终使用 AI 分析。
 AI_ANALYSIS_ENABLED = True
 
 if AI_ANALYSIS_ENABLED:
     if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_API_KEY_HERE":
-        logging.error("错误: Gemini API 密钥未设置。请在脚本中设置 GEMINI_API_KEY。")
+        logging.error("错误: Gemini API 密钥未设置。请在脚本中设置 GEMINI_API_KEY 或设置同名环境变量。")
         AI_ANALYSIS_ENABLED = False
     else:
         try:
@@ -39,7 +40,7 @@ if AI_ANALYSIS_ENABLED:
 # 定义输入报告、输出结果和原始数据的目录。
 DAILY_REPORT_DIR = "每日报告"
 ANALYSIS_RESULT_DIR = "分析结果"
-RAW_DATA_DIR = "股票原始数据" # 新增：用于保存雅虎财经原始数据的目录
+RAW_DATA_DIR = "股票原始数据" # 用于保存雅虎财经原始数据的目录
 os.makedirs(ANALYSIS_RESULT_DIR, exist_ok=True)
 os.makedirs(RAW_DATA_DIR, exist_ok=True)
 
@@ -76,7 +77,6 @@ def get_latest_report():
         logging.error(f"错误: 每日报告目录 '{DAILY_REPORT_DIR}' 未找到。")
         return None
     try:
-        # 查找所有日期格式的子目录
         date_dirs = [d for d in os.listdir(DAILY_REPORT_DIR) if os.path.isdir(os.path.join(DAILY_REPORT_DIR, d)) and re.match(r'^\d{4}-\d{2}-\d{2}$', d)]
         if not date_dirs:
             logging.error(f"在 '{DAILY_REPORT_DIR}' 中未找到日期格式 (YYYY-MM-DD) 的子目录。")
@@ -104,7 +104,6 @@ def extract_stock_recommendations(report_path):
         with open(report_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # 正则表达式寻找Markdown表格，表头包含“股票代码”和“公司名称”
         table_pattern = re.compile(r"\|\s*股票代码\s*\|\s*公司名称\s*\|.*?\n(?:\|:?-+:?\|:?-+:?\|.*?\n)((?:\|.*?\|\n)+)", re.DOTALL)
         match = table_pattern.search(content)
         if not match:
@@ -115,12 +114,8 @@ def extract_stock_recommendations(report_path):
         rows = [row for row in table_content.split('\n') if row.strip()]
         stocks = []
         for row in rows:
-            # --- 优化点：改进表格行解析逻辑 ---
-            # 通过切片 [1:-1] 移除因行首尾的 '|' 字符分割后产生的空字符串
-            # 这样即使某些单元格为空，也能保持正确的列对应关系
             cells = [c.strip() for c in row.split('|')[1:-1]]
 
-            # 确保行至少包含股票代码和公司名称两列
             if len(cells) < 2:
                 logging.warning(f"跳过格式不正确的行（列数不足）: {row}")
                 continue
@@ -128,14 +123,10 @@ def extract_stock_recommendations(report_path):
             stock_code = cells[0]
             stock_name = cells[1]
             
-            # 仅提取6位纯数字的股票代码
             if re.match(r'^\d{6}$', stock_code):
-                # 即使 stock_name 为空字符串，也将其添加
-                # 后续流程会尝试从雅虎财经自动补充名称
                 stocks.append({'code': stock_code, 'name': stock_name})
             else:
                 logging.warning(f"跳过包含无效股票代码的行: {row}")
-
 
         if not stocks:
             logging.error("未能从表中解析任何有效的股票。")
@@ -150,9 +141,9 @@ def extract_stock_recommendations(report_path):
 def get_yahoo_ticker_symbol(code):
     """为雅虎财经自动添加正确的交易所后缀。"""
     code_str = str(code).strip()
-    if code_str.startswith(('60', '68')): # 沪市主板、科创板
+    if code_str.startswith(('60', '68')):
         return f"{code_str}.SS"
-    elif code_str.startswith(('00', '30', '20')): # 深市主板、创业板
+    elif code_str.startswith(('00', '30', '20')):
         return f"{code_str}.SZ"
     else:
         logging.warning(f"无法确定股票代码 {code_str} 的交易所。将默认尝试上交所 (.SS)。")
@@ -166,60 +157,47 @@ def fetch_stock_data_from_yahoo(stock_info):
     ticker_symbol = get_yahoo_ticker_symbol(code)
     stock_yf = yf.Ticker(ticker_symbol)
 
-    # --- NEW: 补充缺失的股票名称 ---
-    # 如果从报告中提取的名称为空，则尝试从雅虎财经获取
+    # 如果从报告中提取的名称为空，则尝试从雅虎财经获取作为备用方案
     if not name or not name.strip():
         logging.info(f"股票代码 {code} 的名称为空，正在尝试从雅虎财经获取...")
         try:
-            # .info 属性包含了公司的详细信息
             stock_details = stock_yf.info
-            # 优先使用 'longName'，如果不存在则使用 'shortName'
             updated_name = stock_details.get('longName') or stock_details.get('shortName')
             if updated_name:
-                name = updated_name  # 更新名称
+                name = updated_name
+                stock_info['name'] = updated_name
                 logging.info(f"成功为代码 {code} 获取到名称: '{name}'")
             else:
                 logging.warning(f"无法从雅虎财经为 {code} 获取到名称。将使用空名称。")
         except Exception as e:
             logging.warning(f"尝试从雅虎财经为 {code} 获取名称时出错: {e}")
-    # --- END NEW ---
 
     stock_data_package = {"code": code, "name": name}
 
-    # 为当前股票创建独立的原始数据存储目录
     stock_raw_data_dir = os.path.join(RAW_DATA_DIR, code)
     os.makedirs(stock_raw_data_dir, exist_ok=True)
 
-    # 1. 获取最近半年的股价历史
     hist_data = stock_yf.history(period="6mo")
     if hist_data.empty:
         logging.warning(f"未能获取 {name}({code}) 的股价历史数据。")
-        return None # 如果没有股价数据，则跳过此股票
+        return None
     
-    # 按时间降序排序 (最新日期在前)
     hist_data.sort_index(ascending=False, inplace=True)
-    
-    # 保存原始股价数据到CSV
     hist_data.to_csv(os.path.join(stock_raw_data_dir, f"{code}_price_6mo.csv"))
     
-    # 替换NaN为None，并将Date索引转为列，以便JSON序列化用于AI分析
     hist_data.index = hist_data.index.strftime('%Y-%m-%d')
     hist_data = hist_data.where(pd.notnull(hist_data), None)
     stock_data_package["price_data"] = hist_data.reset_index().to_dict('records')
 
-    # 2. 获取财务报表 (最近四年)
     try:
-        # 获取年度数据
         income_stmt = stock_yf.income_stmt.iloc[:, :4]
         balance_sheet = stock_yf.balance_sheet.iloc[:, :4]
         cash_flow = stock_yf.cashflow.iloc[:, :4]
 
-        # 保存原始财务数据到CSV
         income_stmt.to_csv(os.path.join(stock_raw_data_dir, f"{code}_income_4y.csv"))
         balance_sheet.to_csv(os.path.join(stock_raw_data_dir, f"{code}_balance_4y.csv"))
         cash_flow.to_csv(os.path.join(stock_raw_data_dir, f"{code}_cashflow_4y.csv"))
 
-        # 清理并格式化数据以用于AI分析
         def format_financial_statement(df):
             df.columns = df.columns.strftime('%Y-%m-%d')
             transposed_df = df.transpose()
@@ -231,7 +209,6 @@ def fetch_stock_data_from_yahoo(stock_info):
         stock_data_package["cash_flow"] = format_financial_statement(cash_flow)
         
         logging.info(f"已为股票 {code} 保存原始数据于 '{stock_raw_data_dir}'")
-
     except Exception as e:
         logging.warning(f"获取 {name}({code}) 的财务数据时出错 (可能是数据不完整): {e}。财务数据将为空。")
         stock_data_package["income_statement"] = []
@@ -280,7 +257,7 @@ def analyze_stocks_in_batch(all_stock_data):
 # 分析与输出要求
 1.  **严格遵守**: 你必须严格按照上述排除标准和特殊情况处理规则，对输入数据中的 **每一支股票** 进行分析并形成一个JSON对象。
 2.  **完整性保证**: 返回的JSON数组 **必须** 包含与输入数据中相同数量的对象。**绝对不要遗漏任何一支股票**。
-3.  **强制格式**: 数组中每个对象的结构 **必须** 如下所示。`code` 字段至关重要。
+3.  **强制格式**: 数组中每个对象的结构 **必须** 如下所示。`code` 和 `name` 字段至关重要。
 ```json
 {
   "code": "原始股票代码, 例如 '600519'",
@@ -296,7 +273,7 @@ def analyze_stocks_in_batch(all_stock_data):
     full_prompt = prompt_header + prompt_data_section + prompt_footer
 
     try:
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
         
         logging.info("正在向 Gemini API 发送请求 (这可能需要一些时间)...")
         start_time = time.time()
@@ -304,12 +281,9 @@ def analyze_stocks_in_batch(all_stock_data):
         elapsed_time = time.time() - start_time
         logging.info(f"在 {elapsed_time:.2f} 秒内收到 Gemini API 的响应")
         
-        # 增加日志以进行调试
-        logging.info(f"收到来自AI的原始响应文本: {response.text[:1000]}...")
+        logging.debug(f"收到来自AI的原始响应文本: {response.text[:1000]}...")
 
-        # 清理并解析JSON响应
         response_text = response.text.strip()
-        # 更稳健地移除代码块标记
         match = re.search(r'```(json)?\n(.*)\n```', response_text, re.DOTALL)
         if match:
             response_text = match.group(2).strip()
@@ -320,10 +294,8 @@ def analyze_stocks_in_batch(all_stock_data):
             logging.error(f"响应格式无效: 期望是列表，但得到 {type(results_list)}")
             return {}
             
-        # 将列表转换为以股票代码为键的字典，便于查找
         results_map = {str(result.get("code")): result for result in results_list if result.get("code")}
         
-        # 检查是否有股票被遗漏
         if len(results_map) < len(all_stock_data):
             logging.warning(f"AI响应中遗漏了 {len(all_stock_data) - len(results_map)} 支股票的分析结果。")
 
@@ -344,12 +316,10 @@ def save_analysis_results(all_stock_data):
     current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     report_data = [{"code": s["code"], "name": s["name"], "analysis_result": s.get("analysis_result", {})} for s in all_stock_data]
     
-    # 保存为JSON
     json_path = os.path.join(ANALYSIS_RESULT_DIR, f"stock_analysis_{current_time}.json")
     with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(report_data, f, ensure_ascii=False, indent=2)
     
-    # 保存为Markdown报告
     md_path = os.path.join(ANALYSIS_RESULT_DIR, f"stock_analysis_{current_time}.md")
     with open(md_path, 'w', encoding='utf-8') as f:
         f.write(f"# 股票筛选分析报告 (AI-Powered)\n\n**分析时间:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
@@ -364,7 +334,6 @@ def save_analysis_results(all_stock_data):
             f.write("| 股票代码 | 公司名称 | AI分析摘要 |\n|:---:|:---:|:---|\n")
             for stock in included:
                 analysis_text = stock['analysis_result'].get('analysis', 'N/A')
-                # 如果包含建议核实的文本，则加粗以突出显示
                 if "建议用户自行核实" in analysis_text:
                     analysis_text = f"**{analysis_text}**"
                 f.write(f"| {stock['code']} | {stock['name']} | {analysis_text} |\n")
@@ -391,7 +360,6 @@ def main():
         logging.error("Gemini AI 未启用或配置失败，无法执行分析。程序退出。")
         return
 
-    # 1. 获取最新报告并提取股票列表
     report_path = get_latest_report()
     if not report_path:
         logging.error("未找到可用的每日报告，程序退出。")
@@ -402,7 +370,6 @@ def main():
         logging.error("无法从报告中提取股票列表，程序退出。")
         return
     
-    # --- 步骤 1: 从Yahoo Finance获取数据 ---
     logging.info("\n--- 步骤 1: 从 Yahoo Finance 获取所有股票的数据 ---")
     all_stock_data = []
     
@@ -419,28 +386,34 @@ def main():
 
     logging.info(f"成功获取了 {len(all_stock_data)} / {len(stocks_to_analyze)} 支股票的数据。")
     
-    # --- 步骤 2: AI 批量分析 ---
     logging.info("\n--- 步骤 2: 开始 AI 批量分析 ---")
     
     analysis_results_map = analyze_stocks_in_batch(all_stock_data)
     
-    # 为未收到分析结果的股票设置默认错误信息
     error_result = {"should_exclude": True, "reason": "分析失败", "analysis": "未能从AI获取对此股票的有效分析。检查日志中AI的原始响应。"}
     
     # 将分析结果映射回原始数据列表
     for stock_data in all_stock_data:
         stock_code = stock_data['code']
-        stock_data['analysis_result'] = analysis_results_map.get(stock_code, error_result)
+        ai_result = analysis_results_map.get(stock_code, error_result)
+        stock_data['analysis_result'] = ai_result
+
+        # --- BUG FIX ---
+        # 如果在初始解析和Yahoo查询后名称仍然缺失，则尝试从AI的响应中恢复名称。
+        # 这增加了脚本的健壮性，以应对解析失败或数据源问题。
+        current_name = stock_data.get("name", "").strip()
+        ai_name = ai_result.get("name", "").strip()
+        if not current_name and ai_name:
+            stock_data["name"] = ai_name
+            logging.info(f"为代码 {stock_code} 从 AI 响应中恢复了名称: '{ai_name}'")
 
     logging.info("已成功映射所有AI分析结果。")
     
-    # --- 步骤 3: 保存最终报告 ---
     logging.info("\n--- 步骤 3: 保存最终分析报告 ---")
     final_report_path = save_analysis_results(all_stock_data)
     
     logging.info("===== 股票筛选工作流成功完成 =====")
     if final_report_path:
-        # 在控制台清晰地打印出MD文件名
         print("\n" + "="*60)
         print("🎉 分析报告已成功生成！")
         print(f"   Markdown 文件名: {os.path.basename(final_report_path)}")
@@ -449,4 +422,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
