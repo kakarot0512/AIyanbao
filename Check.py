@@ -98,58 +98,60 @@ def get_latest_report():
         return None
 
 def extract_stock_recommendations(report_path):
-    """从 Markdown 报告中解析并提取推荐的股票列表 (采用更稳健的逐行解析法)。"""
+    """从 Markdown 报告中解析并提取推荐的股票列表 (采用更稳健的逐行扫描定位法)。"""
     logging.info(f"正在从报告中提取股票推荐: {report_path}...")
     try:
         with open(report_path, 'r', encoding='utf-8-sig') as f:
-            lines = f.readlines()
+            # 预处理：替换不间断空格并移除首尾空格
+            lines = [line.replace('\u00A0', ' ').strip() for line in f.readlines()]
 
         stocks = []
-        in_table = False
-        header_found = False
+        table_start_index = -1
 
-        for line in lines:
-            # FIX: Sanitize line by replacing non-breaking spaces (U+00A0) and stripping whitespace.
-            # This is crucial for handling text copied from web pages or rich text editors.
-            line = line.replace('\u00A0', ' ').strip()
-            
-            if not line:
-                continue
-            
-            # 步骤 1: 寻找表头
-            if "股票代码" in line and "公司名称" in line and line.startswith('|'):
-                header_found = True
-                continue
-
-            # 步骤 2: 找到表头后，寻找分隔线，它标志着表格内容的开始
-            if header_found and not in_table:
-                if re.match(r'^\s*\|(?:\s*:?---+:?\s*\|)+\s*$', line):
-                    in_table = True
-                continue
-
-            # 步骤 3: 如果处于表格内部，开始解析数据行
-            if in_table:
-                if line.startswith('|') and line.endswith('|'):
-                    cells = [c.strip() for c in line.split('|')[1:-1]]
-                    
-                    if len(cells) >= 2:
-                        stock_code = cells[0]
-                        stock_name = cells[1]
-                        
-                        if re.match(r'^\d{6}$', stock_code):
-                            stocks.append({'code': stock_code, 'name': stock_name})
-                        else:
-                            # This row might be malformed or the end of the table data
-                            logging.warning(f"行中发现无效股票代码，停止解析表格: {line}")
-                            break # Stop processing further lines in the table
-                    else:
-                        logging.warning(f"跳过格式不正确的行 (列数不足): {line}")
-                else:
-                    # 如果某行不再是表格行格式，则认为表格已结束
+        # 步骤 1 & 2: 寻找表头和紧随其后的分隔线
+        for i, line in enumerate(lines):
+            is_header = "股票代码" in line and "公司名称" in line and line.startswith('|')
+            if is_header and i + 1 < len(lines):
+                next_line = lines[i + 1]
+                is_separator = re.match(r'^\s*\|(?:\s*:?---+:?\s*\|)+\s*$', next_line)
+                if is_separator:
+                    table_start_index = i + 2  # 数据从分隔线之后开始
+                    logging.info(f"在第 {i} 行找到表格，数据从第 {table_start_index} 行开始。")
                     break
         
+        if table_start_index == -1:
+            logging.error("在报告中找不到格式正确的股票推荐表（缺少表头或分隔线）。")
+            return None
+
+        # 步骤 3: 从找到的起始位置开始解析数据行
+        for i in range(table_start_index, len(lines)):
+            line = lines[i]
+            if line.startswith('|') and line.endswith('|'):
+                cells = [c.strip() for c in line.split('|')[1:-1]]
+                
+                if len(cells) >= 2:
+                    stock_code = cells[0]
+                    stock_name = cells[1]
+                    
+                    if re.match(r'^\d{6}$', stock_code):
+                        # 关键检查: 确保公司名称不为空
+                        if stock_name:
+                            stocks.append({'code': stock_code, 'name': stock_name})
+                        else:
+                            logging.warning(f"解析到空的股票名称，代码: {stock_code}，行: {line}")
+                            # 仍然添加，让后续流程尝试补充
+                            stocks.append({'code': stock_code, 'name': ''})
+                    else:
+                        logging.warning(f"行中发现无效股票代码，假定表格结束: {line}")
+                        break
+                else:
+                    logging.warning(f"跳过列数不足的行: {line}")
+            else:
+                logging.info(f"在第 {i} 行遇到非表格格式行，停止解析。")
+                break
+        
         if not stocks:
-            logging.error("在报告中找不到格式正确的股票推荐表或未能解析任何行。")
+            logging.error("虽然找到了表格，但未能解析出任何有效的股票数据。")
             return None
             
         logging.info(f"成功提取 {len(stocks)} 支推荐股票。")
