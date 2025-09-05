@@ -4,6 +4,7 @@
     "Shanghai_Composite_Index": 3765.8759765625,
     "CSI_300_Index": 4365.2099609375,
     "Shenzhen_Component_Index": 12118.7001953125,
+<<<<<<< Updated upstream
     "ALUMINUM_future": 2517.75,
     "BTC_price": 111206.4609375,
     "OIL_price": 63.34000015258789,
@@ -22,13 +23,37 @@
     "SILVER_future": 41.494998931884766,
     "Long_Term_Treasury_ETF": 87.2300033569336,
     "CORN_future": 419.5,
+=======
+    "ALUMINUM_future": 2545.5,
+    "BTC_price": 111183.9140625,
+    "OIL_price": 63.36000061035156,
+    "USD_CNY_exchange_rate": 7.14139986038208,
+    "Commodity_Index_ETF": 22.209999084472656,
+    "US_Dollar_Index": 98.1449966430664,
+    "ETH_price": 4307.43505859375,
+    "GOLD_spot_price": 3609.0,
+    "LEAN_HOGS_future": 95.0999984741211,
+    "COPPER_future": 4.5920000076293945,
+    "High_Yield_Bond_ETF": 80.83000183105469,
+    "LIVE_CATTLE_future": 236.97500610351562,
+    "GOLD_near_month_future": 3608.89990234375,
+    "NATURAL_GAS_future": 3.0899999141693115,
+    "PLATINUM_future": 1391.800048828125,
+    "SILVER_future": 41.48500061035156,
+    "Long_Term_Treasury_ETF": 87.2300033569336,
+    "CORN_future": 419.75,
+>>>>>>> Stashed changes
     "SOYBEANS_future": 1031.5,
     "WHEAT_future": 520.25,
     "SP500_close": 6502.080078125,
     "NASDAQ_close": 21707.689453125,
     "US_10Y_Treasury_Yield": 4.176000118255615,
     "VIX_close": 15.300000190734863,
+<<<<<<< Updated upstream
     "GOLD_basis_spot_vs_near": -0.10009765625,
+=======
+    "GOLD_basis_spot_vs_near": 0.10009765625,
+>>>>>>> Stashed changes
     "China_10Y_Treasury_Yield": 1.806
   }
 }
