@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(
 
 # !!! 重要：请在此处设置您的 Gemini API 密钥。!!!
 # 如果没有有效的 API 密钥，脚本将无法工作。
-GEMINI_API_KEY = "AIzaSyDN5gaSQjFUTSRQGHc3OuGpFpIPsvu3H2U"  # <--- 在这里替换成你的真实密钥
+GEMINI_API_KEY = "YOUR_API_KEY_HERE"  # <--- 在这里替换成你的真实密钥
 
 # 脚本设计为始终使用 AI 分析。
 AI_ANALYSIS_ENABLED = True
@@ -104,7 +104,7 @@ def extract_stock_recommendations(report_path):
         with open(report_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # 正则表达式寻找Markdown表格
+        # 正则表达式寻找Markdown表格，表头包含“股票代码”和“公司名称”
         table_pattern = re.compile(r"\|\s*股票代码\s*\|\s*公司名称\s*\|.*?\n(?:\|:?-+:?\|:?-+:?\|.*?\n)((?:\|.*?\|\n)+)", re.DOTALL)
         match = table_pattern.search(content)
         if not match:
@@ -115,10 +115,27 @@ def extract_stock_recommendations(report_path):
         rows = [row for row in table_content.split('\n') if row.strip()]
         stocks = []
         for row in rows:
-            cells = [c.strip() for c in row.split('|') if c.strip()]
+            # --- 优化点：改进表格行解析逻辑 ---
+            # 通过切片 [1:-1] 移除因行首尾的 '|' 字符分割后产生的空字符串
+            # 这样即使某些单元格为空，也能保持正确的列对应关系
+            cells = [c.strip() for c in row.split('|')[1:-1]]
+
+            # 确保行至少包含股票代码和公司名称两列
+            if len(cells) < 2:
+                logging.warning(f"跳过格式不正确的行（列数不足）: {row}")
+                continue
+
+            stock_code = cells[0]
+            stock_name = cells[1]
+            
             # 仅提取6位纯数字的股票代码
-            if len(cells) >= 2 and re.match(r'^\d{6}$', cells[0]):
-                stocks.append({'code': cells[0], 'name': cells[1]})
+            if re.match(r'^\d{6}$', stock_code):
+                # 即使 stock_name 为空字符串，也将其添加
+                # 后续流程会尝试从雅虎财经自动补充名称
+                stocks.append({'code': stock_code, 'name': stock_name})
+            else:
+                logging.warning(f"跳过包含无效股票代码的行: {row}")
+
 
         if not stocks:
             logging.error("未能从表中解析任何有效的股票。")
@@ -149,6 +166,24 @@ def fetch_stock_data_from_yahoo(stock_info):
     ticker_symbol = get_yahoo_ticker_symbol(code)
     stock_yf = yf.Ticker(ticker_symbol)
 
+    # --- NEW: 补充缺失的股票名称 ---
+    # 如果从报告中提取的名称为空，则尝试从雅虎财经获取
+    if not name or not name.strip():
+        logging.info(f"股票代码 {code} 的名称为空，正在尝试从雅虎财经获取...")
+        try:
+            # .info 属性包含了公司的详细信息
+            stock_details = stock_yf.info
+            # 优先使用 'longName'，如果不存在则使用 'shortName'
+            updated_name = stock_details.get('longName') or stock_details.get('shortName')
+            if updated_name:
+                name = updated_name  # 更新名称
+                logging.info(f"成功为代码 {code} 获取到名称: '{name}'")
+            else:
+                logging.warning(f"无法从雅虎财经为 {code} 获取到名称。将使用空名称。")
+        except Exception as e:
+            logging.warning(f"尝试从雅虎财经为 {code} 获取名称时出错: {e}")
+    # --- END NEW ---
+
     stock_data_package = {"code": code, "name": name}
 
     # 为当前股票创建独立的原始数据存储目录
@@ -156,16 +191,16 @@ def fetch_stock_data_from_yahoo(stock_info):
     os.makedirs(stock_raw_data_dir, exist_ok=True)
 
     # 1. 获取最近半年的股价历史
-    hist_data = stock_yf.history(period="6mo") # MODIFIED: Changed from 1y to 6mo
+    hist_data = stock_yf.history(period="6mo")
     if hist_data.empty:
         logging.warning(f"未能获取 {name}({code}) 的股价历史数据。")
         return None # 如果没有股价数据，则跳过此股票
     
-    # MODIFIED: 按时间降序排序 (最新日期在前)
+    # 按时间降序排序 (最新日期在前)
     hist_data.sort_index(ascending=False, inplace=True)
     
     # 保存原始股价数据到CSV
-    hist_data.to_csv(os.path.join(stock_raw_data_dir, f"{code}_price_6mo.csv")) # MODIFIED: Filename updated
+    hist_data.to_csv(os.path.join(stock_raw_data_dir, f"{code}_price_6mo.csv"))
     
     # 替换NaN为None，并将Date索引转为列，以便JSON序列化用于AI分析
     hist_data.index = hist_data.index.strftime('%Y-%m-%d')
@@ -414,3 +449,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
