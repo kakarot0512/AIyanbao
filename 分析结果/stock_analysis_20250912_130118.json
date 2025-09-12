@@ -1,0 +1,99 @@
+[
+  {
+    "code": "688521",
+    "name": "",
+    "analysis_result": {
+      "code": "688521",
+      "name": "",
+      "should_exclude": true,
+      "reason": "涨幅巨大接近泡沫",
+      "analysis": "该股近半年涨幅超100%，存在明显泡沫风险；同时公司近年业绩持续下滑，已从盈利转为大幅亏损，经营现金流持续为负，财务状况堪忧。"
+    }
+  },
+  {
+    "code": "300378",
+    "name": "",
+    "analysis_result": {
+      "code": "300378",
+      "name": "",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "尽管营收和净利润持续增长，但公司经营现金流呈下滑趋势，且2023年和2024年自由现金流转为负值并持续恶化，表明其盈利质量存在问题。"
+    }
+  },
+  {
+    "code": "300274",
+    "name": "",
+    "analysis_result": {
+      "code": "300274",
+      "name": "",
+      "should_exclude": true,
+      "reason": "涨幅巨大接近泡沫",
+      "analysis": "该股近半年涨幅超100%，存在明显泡沫风险，但公司近年来营收和净利润保持高速增长，经营和自由现金流表现强劲，财务状况良好。"
+    }
+  },
+  {
+    "code": "601233",
+    "name": "",
+    "analysis_result": {
+      "code": "601233",
+      "name": "",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司2022年盈利大幅下滑且未完全恢复，近年债务持续增长，营运资本长期为负且不断恶化，显示严重财务问题和流动性风险。"
+    }
+  },
+  {
+    "code": "600547",
+    "name": "",
+    "analysis_result": {
+      "code": "600547",
+      "name": "",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司债务规模急剧扩张，营运资本持续为负且加速恶化，自由现金流长期为负并大幅下降，显示其财务结构存在严重风险，尽管营收和净利润增长。"
+    }
+  },
+  {
+    "code": "002895",
+    "name": "",
+    "analysis_result": {
+      "code": "002895",
+      "name": "",
+      "should_exclude": true,
+      "reason": "涨幅巨大接近泡沫",
+      "analysis": "该股近半年涨幅超180%，存在显著泡沫风险，但公司近年来营收、净利润和现金流表现强劲且持续增长，财务状况稳健。"
+    }
+  },
+  {
+    "code": "601601",
+    "name": "",
+    "analysis_result": {
+      "code": "601601",
+      "name": "",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司营收和净利润在过去几年出现大幅波动，特别是2022年营收急剧下滑，2023年净利润大幅下降，业绩稳定性存在明显问题。"
+    }
+  },
+  {
+    "code": "603288",
+    "name": "",
+    "analysis_result": {
+      "code": "603288",
+      "name": "",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "公司近年来营收和净利润稳健增长，财务杠杆合理，经营活动和自由现金流表现强劲，财务状况健康。"
+    }
+  },
+  {
+    "code": "603766",
+    "name": "",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  }
+]
