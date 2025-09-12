@@ -78,13 +78,13 @@ def get_recent_financial_news():
     except Exception as e:
         print(f"获取财联社新闻失败: {e}")
 
-    # 4. 新浪财经 - 证券原创
+    # 4. 金十数据 - 证券原创
     try:
-        print("\n--- 正在获取新浪财经新闻 (可能需要一些时间) ---")
+        print("\n--- 正在获取金十数据 (可能需要一些时间) ---")
         sina_all = pd.DataFrame()
         for page in range(1, 6): 
             print(f"正在获取第 {page} 页...")
-            stock_info_broker_sina_df = ak.stock_info_broker_sina(page=str(page))
+            stock_info_broker_sina_df = ak.js_news(page=str(page))
             
             # --- 核心修正: 指定日期格式 ---
             stock_info_broker_sina_df['时间'] = pd.to_datetime(stock_info_broker_sina_df['时间'], format='%Y年%m月%d日 %H:%M', errors='coerce')
@@ -97,7 +97,7 @@ def get_recent_financial_news():
         sina_recent = sina_all[sina_all['时间'] >= seven_days_ago].copy()
         
         sina_recent = sina_recent.rename(columns={'内容': '标题'})
-        sina_recent['来源'] = '新浪财经'
+        sina_recent['来源'] = '金十数据'
         sina_recent = sina_recent[['来源', '时间', '标题']]
 
         # 过滤空标题
@@ -105,9 +105,9 @@ def get_recent_financial_news():
         sina_recent = sina_recent[sina_recent['标题'].astype(str).str.strip() != '']
         
         all_news_list.append(sina_recent)
-        print(f"成功获取并处理 {len(sina_recent)} 条新浪财经新闻。")
+        print(f"成功获取并处理 {len(sina_recent)} 条金十数据新闻。")
     except Exception as e:
-        print(f"获取新浪财经新闻失败: {e}")
+        print(f"获取金十数据失败: {e}")
 
     # 合并所有新闻源的数据
     if not all_news_list:
