@@ -422,8 +422,8 @@ def main():
 
     driver = None
     try:
-        print("检测到浏览器版本为 137，正在匹配对应驱动...")
-        driver = uc.Chrome(options=options, use_subprocess=True, version_main=137)
+        print("检测到浏览器版本，正在匹配对应驱动...")
+        driver = uc.Chrome(options=options, use_subprocess=True)
         driver.implicitly_wait(5) 
 
         # --- 任务1: 抓取投研资讯网 ---
