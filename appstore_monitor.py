@@ -335,11 +335,11 @@ def load_cls_news():
             logging.warning("未找到任何财联社新闻数据")
             return "暂无财联社新闻数据"
         
-        # 限制总行数不超过2700行
+        # 限制总行数不超过3000行
         lines = combined_content.split('\n')
-        if len(lines) > 2700:
-            combined_content = '\n'.join(lines[:2700])
-            logging.warning(f"财联社新闻数据超过2700行，已截取前2700行。原始行数: {len(lines)}")
+        if len(lines) > 3000:
+            combined_content = '\n'.join(lines[:3000])
+            logging.warning(f"财联社新闻数据超过3000行，已截取前3000行。原始行数: {len(lines)}")
         
         logging.info(f"成功合并财联社新闻数据，总长度: {len(combined_content)}")
         return combined_content
@@ -402,8 +402,8 @@ def summarize_cls_news_with_ai(cls_news_content):
         save_gemini_prompt_to_file(prompt, "cls_summary")
         
         # 增加等待，防止API频率过快
-        logging.info("等待20秒，防止API频率过快...")
-        time.sleep(20)
+        logging.info("等待30秒，防止API频率过快...")
+        time.sleep(30)
 
         response = model.generate_content(prompt)
         
@@ -443,9 +443,9 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news_summa
         # 保存发送给Gemini的完整内容
         save_gemini_prompt_to_file(prompt, "comprehensive_analysis")
         
-        # 增加30秒等待，防止API频率过快
-        logging.info("等待45秒，防止API频率过快...")
-        time.sleep(45)
+        # 增加60秒等待，防止API频率过快
+        logging.info("等待60秒，防止API频率过快...")
+        time.sleep(60)
         
         response = model.generate_content(prompt)
         
@@ -696,9 +696,9 @@ def analyze_stocks_in_batch(all_stock_data):
         logging.info("正在向 Gemini API 发送批量分析请求 (这可能需要一些时间)...")
         start_time = time.time()
         
-        # 增加30秒等待，防止API频率过快
-        logging.info("等待30秒，防止API频率过快...")
-        time.sleep(30)
+        # 增加60秒等待，防止API频率过快
+        logging.info("等待60秒，防止API频率过快...")
+        time.sleep(60)
         
         response = model.generate_content(full_prompt)
         
