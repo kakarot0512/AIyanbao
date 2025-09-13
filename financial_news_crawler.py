@@ -78,36 +78,46 @@ def get_recent_financial_news():
     except Exception as e:
         print(f"获取财联社新闻失败: {e}")
 
-    # 4. 新浪财经 - 证券原创
+    # 4. 富途牛牛 - 全球财经快讯
     try:
-        print("\n--- 正在获取新浪财经新闻 (可能需要一些时间) ---")
-        sina_all = pd.DataFrame()
-        for page in range(1, 6): 
-            print(f"正在获取第 {page} 页...")
-            stock_info_broker_sina_df = ak.stock_info_global_sina(page=str(page))
-            
-            # --- 核心修正: 指定日期格式 ---
-            stock_info_broker_sina_df['时间'] = pd.to_datetime(stock_info_broker_sina_df['时间'], format='%Y年%m月%d日 %H:%M', errors='coerce')
-            
-            sina_all = pd.concat([sina_all, stock_info_broker_sina_df])
-            if not sina_all.empty and sina_all['时间'].min() < seven_days_ago:
-                break
-            time.sleep(1)
-            
-        sina_recent = sina_all[sina_all['时间'] >= seven_days_ago].copy()
-        
-        sina_recent = sina_recent.rename(columns={'内容': '标题'})
-        sina_recent['来源'] = '新浪财经'
-        sina_recent = sina_recent[['来源', '时间', '标题']]
+        print("\n--- 正在获取富途牛-快讯 ---")
+        stock_info_global_futu_df = ak.stock_info_global_futu()
+        stock_info_global_futu_df['发布时间'] = pd.to_datetime(stock_info_global_futu_df['发布时间'], errors='coerce')
+        futu_recent = stock_info_global_futu_df[stock_info_global_futu_df['发布时间'] >= seven_days_ago].copy()
 
-        # 过滤空标题
-        sina_recent.dropna(subset=['标题'], inplace=True)
-        sina_recent = sina_recent[sina_recent['标题'].astype(str).str.strip() != '']
+        futu_recent = futu_recent.rename(columns={'发布时间': '时间'})
+        futu_recent['来源'] = '富途牛牛'
+        futu_recent = futu_recent[['来源', '时间', '标题']]
         
-        all_news_list.append(sina_recent)
-        print(f"成功获取并处理 {len(sina_recent)} 条新浪财经新闻。")
+        # 过滤空标题
+        futu_recent.dropna(subset=['标题'], inplace=True)
+        futu_recent = futu_recent[futu_recent['标题'].astype(str).str.strip() != '']
+        
+        all_news_list.append(futu_recent)
+        print(f"成功获取并处理 {len(futu_recent)} 条富途牛牛新闻。")
     except Exception as e:
-        print(f"获取新浪财经新闻失败: {e}")
+        print(f"获取富途牛牛 - 快讯失败: {e}")
+
+    # 5. 东财财富 - 快讯
+    try:
+        print("\n--- 正在获取东财财富 - 全球财经快讯 ---")
+        stock_info_global_em_df = ak.stock_info_global_em()
+        stock_info_global__em_df['发布时间'] = pd.to_datetime(stock_info_global__em_df['发布时间'], errors='coerce')
+        dfcf_recent = stock_info_global__em_df[stock_info_global__em_df['发布时间'] >= seven_days_ago].copy()
+
+        dfcf_recent = dfcf_recent.rename(columns={'发布时间': '时间'})
+        dfcf_recent['来源'] = '东财财富'
+        dfcf_recent = dfcf_recent[['来源', '时间', '标题']]
+        
+        # 过滤空标题
+        dfcf_recent.dropna(subset=['标题'], inplace=True)
+        dfcf_recent = dfcf_recent[dfcf_recent['标题'].astype(str).str.strip() != '']
+        
+        all_news_list.append(dfcf_recent)
+        print(f"成功获取并处理 {len(dfcf_recent)} 条东财财富新闻。")
+    except Exception as e:
+        print(f"获取东财财富 - 全球财经快讯失败: {e}") 
+        
         
     # 合并所有新闻源的数据
     if not all_news_list:
