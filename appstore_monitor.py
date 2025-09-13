@@ -402,8 +402,8 @@ def summarize_cls_news_with_ai(cls_news_content):
         save_gemini_prompt_to_file(prompt, "cls_summary")
         
         # 增加等待，防止API频率过快
-        logging.info("等待15秒，防止API频率过快...")
-        time.sleep(15)
+        logging.info("等待30秒，防止API频率过快...")
+        time.sleep(30)
 
         response = model.generate_content(prompt)
         
