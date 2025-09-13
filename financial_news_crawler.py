@@ -102,8 +102,8 @@ def get_recent_financial_news():
     try:
         print("\n--- 正在获取东财财富 - 全球财经快讯 ---")
         stock_info_global_em_df = ak.stock_info_global_em()
-        stock_info_global__em_df['发布时间'] = pd.to_datetime(stock_info_global__em_df['发布时间'], errors='coerce')
-        dfcf_recent = stock_info_global__em_df[stock_info_global__em_df['发布时间'] >= seven_days_ago].copy()
+        stock_info_global_em_df['发布时间'] = pd.to_datetime(stock_info_global_em_df['发布时间'], errors='coerce')
+        dfcf_recent = stock_info_global_em_df[stock_info_global_em_df['发布时间'] >= seven_days_ago].copy()
 
         dfcf_recent = dfcf_recent.rename(columns={'发布时间': '时间'})
         dfcf_recent['来源'] = '东财财富'
