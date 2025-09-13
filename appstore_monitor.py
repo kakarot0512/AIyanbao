@@ -335,11 +335,11 @@ def load_cls_news():
             logging.warning("未找到任何财联社新闻数据")
             return "暂无财联社新闻数据"
         
-        # 限制总行数不超过3000行
+        # 限制总行数不超过2700行
         lines = combined_content.split('\n')
-        if len(lines) > 3000:
-            combined_content = '\n'.join(lines[:3000])
-            logging.warning(f"财联社新闻数据超过3000行，已截取前3000行。原始行数: {len(lines)}")
+        if len(lines) > 2700:
+            combined_content = '\n'.join(lines[:2700])
+            logging.warning(f"财联社新闻数据超过2700行，已截取前2700行。原始行数: {len(lines)}")
         
         logging.info(f"成功合并财联社新闻数据，总长度: {len(combined_content)}")
         return combined_content
