@@ -265,9 +265,9 @@ def load_financial_news():
         if os.path.exists(file_path):
             df = pd.read_csv(file_path, encoding='utf-8-sig')
             logging.info(f"找到新闻文件，共 {len(df)} 条记录")
-            if len(df) > 300:
-                df = df.head(300)
-                logging.info("新闻记录超过300条，已截取最新的300条")
+            if len(df) > 200:
+                df = df.head(200)
+                logging.info("新闻记录超过200条，已截取最新的200条")
 
             news_content = df.to_string(index=False)
             logging.info(f"成功加载财经新闻数据，内容长度: {len(news_content)} 字符")
@@ -335,11 +335,11 @@ def load_cls_news():
             logging.warning("未找到任何财联社新闻数据")
             return "暂无财联社新闻数据"
         
-        # 限制总行数不超过3000行
+        # 限制总行数不超过2700行
         lines = combined_content.split('\n')
-        if len(lines) > 3000:
-            combined_content = '\n'.join(lines[:3000])
-            logging.warning(f"财联社新闻数据超过3000行，已截取前3000行。原始行数: {len(lines)}")
+        if len(lines) > 2700:
+            combined_content = '\n'.join(lines[:2700])
+            logging.warning(f"财联社新闻数据超过2700行，已截取前2700行。原始行数: {len(lines)}")
         
         logging.info(f"成功合并财联社新闻数据，总长度: {len(combined_content)}")
         return combined_content
@@ -402,8 +402,8 @@ def summarize_cls_news_with_ai(cls_news_content):
         save_gemini_prompt_to_file(prompt, "cls_summary")
         
         # 增加等待，防止API频率过快
-        logging.info("等待30秒，防止API频率过快...")
-        time.sleep(30)
+        logging.info("等待20秒，防止API频率过快...")
+        time.sleep(20)
 
         response = model.generate_content(prompt)
         
@@ -444,8 +444,8 @@ def generate_comprehensive_analysis(reports_data, financial_news, cls_news_summa
         save_gemini_prompt_to_file(prompt, "comprehensive_analysis")
         
         # 增加30秒等待，防止API频率过快
-        logging.info("等待30秒，防止API频率过快...")
-        time.sleep(30)
+        logging.info("等待45秒，防止API频率过快...")
+        time.sleep(45)
         
         response = model.generate_content(prompt)
         
