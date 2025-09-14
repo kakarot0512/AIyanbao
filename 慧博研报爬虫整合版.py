@@ -98,7 +98,8 @@ def scrape_hibor_multi_page(driver, start_page=1, end_page=20):
                     #"作者": author,
                     "评级": rating,
                     #"页数": pages,
-                    "日期": report_date,
+                    #"日期": report_date,
+                    "分享时间": report_date,
                     #"分享者": sharer,
                     #"来源页": page_num,
                     #"抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -344,7 +345,8 @@ def scrape_category_page(driver, category_name, category_id, start_page, end_pag
                     #"作者": author,
                     "评级": rating,
                     #"页数": pages,
-                    "日期": report_date,
+                    #"日期": report_date,
+                    "分享时间": report_date,
                     #"分享者": sharer,
                     #"来源页": page_num,
                     #"抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
