@@ -1,11 +1,11 @@
 name: 投资数据综合采集与AI分析
 
 on:
-   使用 cron 语法，每小时运行一次 (UTC时间)
+   #使用 cron 语法，每小时运行一次 (UTC时间)
    schedule:
     - cron: '0 */2 * * *'
-   也允许手动触发
-  workflow_dispatch:
+   #也允许手动触发
+   workflow_dispatch:
 
 jobs:
   update-data:
