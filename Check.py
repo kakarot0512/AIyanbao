@@ -251,7 +251,7 @@ def analyze_stocks_in_batch(all_stock_data):
         logging.warning("AI_ANALYSIS_ENABLED 为 False，跳过 AI 分析。")
         return {}
 
-    logging.info(f"正在使用 Gemini AI 批量分析 {len(all_stock_data)} 支股票...")
+    logging.info(f"check正在使用 Gemini AI 批量分析 {len(all_stock_data)} 支股票...")
 
     prompt_header = """
 # 角色
@@ -260,9 +260,8 @@ def analyze_stocks_in_batch(all_stock_data):
 # 任务
 根据下面提供的一组股票列表及其从Yahoo Finance获取的原始数据（近半年股价历史和近几年年度财务报表），你必须 **无一例外地** 对列表中的 **每一支** 股票进行综合分析。然后，根据以下核心标准，判断是否应该将其 **排除** 在一个观察列表中：
 
-1.  **近期明显下跌走势**: 股票价格在近期（例如最近2个月）表现出清晰、持续的下跌趋势，没有企稳迹象。
-2.  **涨幅巨大，炒作接近泡沫**: 股票价格在短期内（例如过去半年）已经经历了非常巨大的涨幅，估值可能过高，存在泡沫风险。
-3.  **财务有严重问题**: 股票存在明显的财务风险，例如连续亏损、经营性现金流持续为负、负债率过高且持续恶化等。
+1. **涨幅巨大，炒作接近泡沫**: 股票价格在短期内（例如过去半年）已经经历了非常巨大的涨幅，并通过考虑未来预估市盈率等估值体系。来确定估值是否过高，存在泡沫风险。
+2. **业绩出现过明显问题**: 公司近期内的财务报表存在风险点：如收入和毛利率的大幅下滑，资产负债情况变差，现金流明显减少等
 
 # 特殊情况处理
 - **数据不完整**: 如果某支股票的关键财务数据（如利润表、现金流量表）严重缺失，**不要将其排除**。在分析中明确指出数据不完整，并建议用户自行核实。
@@ -284,7 +283,7 @@ def analyze_stocks_in_batch(all_stock_data):
 ```json
 {
   "code": "原始股票代码, 例如 '600519'",
-  "name": "原始股票名字, 例如 '贵州茅台'",
+  "name": "公司名称, 例如 '贵州茅台'",
   "should_exclude": boolean,
   "reason": "仅在 should_exclude 为 true 时填写此字段，从'近期明显下跌走势'、'涨幅巨大接近泡沫'、'财务有严重问题'中选择一个。如果should_exclude为false，此字段应为空字符串或null。",
   "analysis": "提供一句话的简明扼要的分析，解释你做出该判断的核心依据。对于数据不完整的股票，should_exclude应为false，并在此处说明‘数据不完整，建议用户自行核实相关财务报表。’"
@@ -296,7 +295,7 @@ def analyze_stocks_in_batch(all_stock_data):
     full_prompt = prompt_header + prompt_data_section + prompt_footer
 
     try:
-        model = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
+        model = genai.GenerativeModel('gemini-2.5-pro')
         
         logging.info("正在向 Gemini API 发送请求 (这可能需要一些时间)...")
         start_time = time.time()
