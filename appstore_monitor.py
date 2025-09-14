@@ -536,34 +536,34 @@ def extract_stock_recommendations(report_path):
     logging.info(f"正在从报告中提取股票推荐: {report_path}...")
     try:
         with open(report_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # 直接使用逐行扫描方法，查找包含6位股票代码的行
-        logging.info("扫描报告中的股票推荐...")
-        lines = content.split('\n')
-        stocks = []
-        found_table_header = False
-        
-        for line in lines:
-            # 检查是否是表格头
-            if '股票代码' in line and '公司名称' in line:
-                found_table_header = True
-                logging.info("找到股票推荐表格头部")
-                continue
-            
-            if found_table_header and '|' in line:
-                # 提取表格每列
-                cols = [c.strip() for c in line.strip().split('|') if c.strip()]
-                if len(cols) >= 2:
-                    code_raw = cols[0]
-                    name = cols[1]
+            lines = f.readlines()
 
-                    # 提取前6位数字（忽略 .SH / .SZ / .HK 后缀）
-                    m = re.match(r'^(\d{6})', code_raw)
-                    if m:
-                        code = m.group(1)
-                        stocks.append({'code': code, 'name': name})
-                        logging.debug(f"找到股票: {code} - {name}")
+        stocks = []
+        found_table = False
+
+        for line in lines:
+            line = line.strip()
+            if not line.startswith('|') or line.count('|') < 3:
+                continue
+            cells = [c.strip() for c in line.split('|')[1:-1]]
+            if not cells:
+                continue
+
+            if '股票代码' in cells[0] and '公司名称' in cells[1]:
+                found_table = True
+                continue
+            if not found_table:
+                continue
+
+            # 只提取 6 位数字
+            m = re.search(r'\d{6}', cells[0])
+            if not m:
+                continue
+            code = m.group()
+            name = cells[1]
+
+            stocks.append({'code': code, 'name': name})
+            logging.debug(f"找到股票: {code} - {name}")
         
         if not stocks:
             logging.error("在报告中找不到任何股票推荐。")
