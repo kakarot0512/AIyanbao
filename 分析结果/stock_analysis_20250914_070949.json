@@ -1,0 +1,110 @@
+[
+  {
+    "code": "688521",
+    "name": "新签订单创历史新高公司公告79月新签订单同比大幅增长8588获得多家券商密集覆盖和推荐影响评估",
+    "analysis_result": {
+      "code": "688521",
+      "name": "华虹公司",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司在2023和2024年出现大幅亏损，毛利率持续下滑，负债增加，经营性现金流和自由现金流持续为负且恶化，同时近半年股价涨幅超100%，存在严重泡沫风险。"
+    }
+  },
+  {
+    "code": "601899",
+    "name": "阿根廷碳酸锂项目投产公司公告年产2万吨碳酸锂项目投产切入新能源上游核心资源影响评估",
+    "analysis_result": {
+      "code": "601899",
+      "name": "紫金矿业",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "公司近年营收和净利润持续稳健增长，经营性现金流强劲，2024年自由现金流大幅改善，资产负债状况良好，近半年股价上涨有基本面支撑。"
+    }
+  },
+  {
+    "code": "688521",
+    "name": "SH",
+    "analysis_result": {
+      "code": "688521",
+      "name": "华虹公司",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司在2023和2024年出现大幅亏损，毛利率持续下滑，负债增加，经营性现金流和自由现金流持续为负且恶化，同时近半年股价涨幅超100%，存在严重泡沫风险。"
+    }
+  },
+  {
+    "code": "603920",
+    "name": "SH",
+    "analysis_result": {
+      "code": "603920",
+      "name": "世运电路",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "公司营收和净利润持续增长，2024年显著改善资产负债结构，现金流由负转正并保持健康，基本面稳健。"
+    }
+  },
+  {
+    "code": "601899",
+    "name": "SH",
+    "analysis_result": {
+      "code": "601899",
+      "name": "紫金矿业",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "公司近年营收和净利润持续稳健增长，经营性现金流强劲，2024年自由现金流大幅改善，资产负债状况良好，近半年股价上涨有基本面支撑。"
+    }
+  },
+  {
+    "code": "600141",
+    "name": "SH",
+    "analysis_result": {
+      "code": "600141",
+      "name": "北方稀土",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司2023年营收和净利润大幅下滑，毛利率下降，经营性现金流和自由现金流在2023-2024年显著减少甚至转负，业绩存在明显问题。"
+    }
+  },
+  {
+    "code": "600733",
+    "name": "SH",
+    "analysis_result": {
+      "code": "600733",
+      "name": "北汽蓝谷",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司连续多年持续巨额亏损，保留盈余严重为负且不断扩大，经营性现金流和自由现金流在2023-2024年转负且恶化，基本面存在严重问题。"
+    }
+  },
+  {
+    "code": "688772",
+    "name": "SH",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "300750",
+    "name": "SZ",
+    "analysis_result": {
+      "code": "300750",
+      "name": "宁德时代",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "公司营收和净利润持续保持强劲增长，经营性现金流和自由现金流表现出色，资产负债状况健康，基本面表现优异。"
+    }
+  },
+  {
+    "code": "300760",
+    "name": "SZ",
+    "analysis_result": {
+      "code": "300760",
+      "name": "迈瑞医疗",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "公司营收和净利润持续稳健增长，经营性现金流和自由现金流保持强劲正值，资产负债结构优异，基本面非常健康。"
+    }
+  }
+]
