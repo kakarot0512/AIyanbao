@@ -265,9 +265,9 @@ def load_financial_news():
         if os.path.exists(file_path):
             df = pd.read_csv(file_path, encoding='utf-8-sig')
             logging.info(f"找到新闻文件，共 {len(df)} 条记录")
-            if len(df) > 200:
-                df = df.head(200)
-                logging.info("新闻记录超过200条，已截取最新的200条")
+            if len(df) > 300:
+                df = df.head(300)
+                logging.info("新闻记录超过300条，已截取最新的300条")
 
             news_content = df.to_string(index=False)
             logging.info(f"成功加载财经新闻数据，内容长度: {len(news_content)} 字符")
