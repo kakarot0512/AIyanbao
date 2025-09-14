@@ -76,32 +76,32 @@ def scrape_hibor_multi_page(driver, start_page=1, end_page=20):
                 if meta_cell:
                     for span in meta_cell.find_all('span', recursive=False):
                         text = span.text.strip()
-                        if '作者：' in text:
-                            author_tag = span.find('a')
-                            if author_tag: author = author_tag.text.strip()
+                        #if '作者：' in text:
+                        #    author_tag = span.find('a')
+                        #    if author_tag: author = author_tag.text.strip()
                         elif '评级：' in text:
                             rating_tag = span.find('label')
                             if rating_tag: rating = rating_tag.text.strip()
-                        elif '页数：' in text:
-                            match = re.search(r'(\d+)', text)
-                            if match: pages = match.group(1)
-                        elif '分享者：' in text:
-                            sharer = text.replace('分享者：', '').strip()
+                        #elif '页数：' in text:
+                        #    match = re.search(r'(\d+)', text)
+                        #    if match: pages = match.group(1)
+                        #elif '分享者：' in text:
+                        #    sharer = text.replace('分享者：', '').strip()
                         else:
                             date_match = re.search(r'\d{4}-\d{2}-\d{2}', text)
                             if date_match: report_date = date_match.group(0)
                 
                 all_reports.append({
-                    "分类": "投研资讯",
+                    #"分类": "投研资讯",
                     "研报标题": full_title,
                     "摘要": summary,
-                    "作者": author,
+                    #"作者": author,
                     "评级": rating,
-                    "页数": pages,
+                    #"页数": pages,
                     "日期": report_date,
-                    "分享者": sharer,
-                    "来源页": page_num,
-                    "抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    #"分享者": sharer,
+                    #"来源页": page_num,
+                    #"抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
                 page_reports_count += 1
             
@@ -165,13 +165,13 @@ def scrape_latest_buy_reports(driver, start_page=1, end_page=10):
                 date = cells[4].text.strip()
 
                 all_reports.append({
-                    "分类": "最新买入",
+                    #"分类": "最新买入",
                     "研报标题": title,
-                    "类型": report_type,
+                    #"类型": report_type,
                     "评级": rating,
                     "分享时间": date,
-                    "来源页": page_num,
-                    "抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    #"来源页": page_num,
+                    #"抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
                 page_reports_count += 1
             
@@ -237,13 +237,13 @@ def scrape_hibor_list_page(driver, category_id, category_name, start_page, end_p
                 date = cells[4].text.strip()
 
                 category_reports.append({
-                    "分类": category_name,
+                    #"分类": category_name,
                     "研报标题": title,
-                    "类型": report_type,
+                    #"类型": report_type,
                     "评级": rating,
                     "分享时间": date,
-                    "来源页": page_num,
-                    "抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    #"来源页": page_num,
+                    #"抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
                 page_reports_count += 1
             
@@ -338,16 +338,16 @@ def scrape_category_page(driver, category_name, category_id, start_page, end_pag
                             if date_match: report_date = date_match.group(0)
                 
                 category_reports.append({
-                    "分类": category_name,
+                    #"分类": category_name,
                     "研报标题": full_title,
                     "摘要": summary,
-                    "作者": author,
+                    #"作者": author,
                     "评级": rating,
-                    "页数": pages,
+                    #"页数": pages,
                     "日期": report_date,
-                    "分享者": sharer,
-                    "来源页": page_num,
-                    "抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    #"分享者": sharer,
+                    #"来源页": page_num,
+                    #"抓取时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
                 page_reports_count += 1
             
