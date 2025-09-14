@@ -76,17 +76,17 @@ def scrape_hibor_multi_page(driver, start_page=1, end_page=20):
                 if meta_cell:
                     for span in meta_cell.find_all('span', recursive=False):
                         text = span.text.strip()
-                        #if '作者：' in text:
-                        #    author_tag = span.find('a')
-                        #    if author_tag: author = author_tag.text.strip()
+                        if '作者：' in text:
+                            author_tag = span.find('a')
+                            if author_tag: author = author_tag.text.strip()
                         elif '评级：' in text:
                             rating_tag = span.find('label')
                             if rating_tag: rating = rating_tag.text.strip()
-                        #elif '页数：' in text:
-                        #    match = re.search(r'(\d+)', text)
-                        #    if match: pages = match.group(1)
-                        #elif '分享者：' in text:
-                        #    sharer = text.replace('分享者：', '').strip()
+                        elif '页数：' in text:
+                            match = re.search(r'(\d+)', text)
+                            if match: pages = match.group(1)
+                        elif '分享者：' in text:
+                            sharer = text.replace('分享者：', '').strip()
                         else:
                             date_match = re.search(r'\d{4}-\d{2}-\d{2}', text)
                             if date_match: report_date = date_match.group(0)
