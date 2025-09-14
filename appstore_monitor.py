@@ -551,15 +551,19 @@ def extract_stock_recommendations(report_path):
                 logging.info("找到股票推荐表格头部")
                 continue
             
-            # 查找6位数字的股票代码
-            matches = re.findall(r'\b\d{6}\b', line)
-            if matches:
-                for code in matches:
-                    # 假设公司名称在股票代码之后，用空格或其他分隔符隔开
-                    name_part = line.split(code, 1)[-1].strip()
-                    name = re.sub(r'[^\w\s]', '', name_part.split()[0]) if name_part else "未知公司"
-                    stocks.append({'code': code, 'name': name})
-                    logging.debug(f"找到股票: {code} - {name}")
+            if found_table_header and '|' in line:
+                # 提取表格每列
+                cols = [c.strip() for c in line.strip().split('|') if c.strip()]
+                if len(cols) >= 2:
+                    code_raw = cols[0]
+                    name = cols[1]
+
+                    # 提取前6位数字（忽略 .SH / .SZ / .HK 后缀）
+                    m = re.match(r'^(\d{6})', code_raw)
+                    if m:
+                        code = m.group(1)
+                        stocks.append({'code': code, 'name': name})
+                        logging.debug(f"找到股票: {code} - {name}")
         
         if not stocks:
             logging.error("在报告中找不到任何股票推荐。")
