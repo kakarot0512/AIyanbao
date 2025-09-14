@@ -381,7 +381,8 @@ def deduplicate_and_save_by_week(all_data):
     
     # 去重 - 基于研报标题和分类
     print(f"去重前数据量: {len(df)}")
-    df = df.drop_duplicates(subset=['分类', '研报标题'])
+    #df = df.drop_duplicates(subset=['分类', '研报标题'])
+    df = df.drop_duplicates(subset=['研报标题'])
     print(f"去重后数据量: {len(df)}")
     
     # 获取当前日期
