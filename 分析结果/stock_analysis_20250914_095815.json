@@ -1,0 +1,108 @@
+[
+  {
+    "code": "688521",
+    "name": "**芯原股份**",
+    "analysis_result": {
+      "code": "688521",
+      "name": "**芯原股份**",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "近半年股价涨幅超100%，存在明显泡沫风险。同时，公司近年连续亏损，营收及毛利率下滑，经营活动现金流持续为负，且资产负债情况恶化，业绩问题突出。"
+    }
+  },
+  {
+    "code": "300373",
+    "name": "**扬杰科技**",
+    "analysis_result": {
+      "code": "300373",
+      "name": "**扬杰科技**",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "近半年股价涨幅约37%，属正常波动范围。公司近年营收和净利润持续增长，经营活动现金流充裕且自由现金流转正，财务状况稳健。"
+    }
+  },
+  {
+    "code": "601899",
+    "name": "**紫金矿业**",
+    "analysis_result": {
+      "code": "601899",
+      "name": "**紫金矿业**",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "近半年股价涨幅约56%，虽有上涨但未达泡沫程度。公司营收、净利润及经营活动现金流均保持强劲增长，财务基本面良好。"
+    }
+  },
+  {
+    "code": "600547",
+    "name": "**山东黄金**",
+    "analysis_result": {
+      "code": "600547",
+      "name": "**山东黄金**",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司存在显著的业绩问题，包括持续恶化的负营运资本，不断增长的负债，以及连续且恶化的负自由现金流，财务健康状况令人担忧，尽管营收和净利润在增长。"
+    }
+  },
+  {
+    "code": "603920",
+    "name": "**世运电路**",
+    "analysis_result": {
+      "code": "603920",
+      "name": "**世运电路**",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "近半年股价涨幅约38%，表现良好但未见泡沫。公司营收、净利润稳步增长，负债水平持续下降，自由现金流表现强劲，财务状况健康。"
+    }
+  },
+  {
+    "code": "600584",
+    "name": "**长电科技**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "002074",
+    "name": "**国轩高科**",
+    "analysis_result": {
+      "code": "002074",
+      "name": "**国轩高科**",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "近半年股价涨幅超100%，存在明显泡沫风险。同时，公司存在显著的业绩问题，包括持续负营运资本、迅速增长的负债和巨额负自由现金流，财务状况不佳。"
+    }
+  },
+  {
+    "code": "003021",
+    "name": "**兆威机电**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "688772",
+    "name": "**珠海冠宇**",
+    "analysis_result": {
+      "code": "688772",
+      "name": "**珠海冠宇**",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司业绩出现明显问题，2022年净利润和毛利率大幅下滑，营收增长放缓，负债持续增加，且自由现金流长期为负，财务表现不理想。"
+    }
+  },
+  {
+    "code": "603766",
+    "name": "**隆鑫通用**",
+    "analysis_result": {
+      "code": "603766",
+      "name": "**隆鑫通用**",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "近半年股价涨幅约27%，属于温和上涨。公司营收和净利润增长稳健，负债持续下降，经营活动和自由现金流表现强劲，财务状况良好。"
+    }
+  }
+]
