@@ -1,0 +1,99 @@
+[
+  {
+    "code": "688521",
+    "name": "**芯原股份**",
+    "analysis_result": {
+      "code": "688521",
+      "name": "**芯原股份**",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司收入和毛利率连续下滑，净利润由盈利转为大幅亏损且持续扩大，经营现金流亦为负值并不断恶化，资产负债情况显著变差，业绩出现明显问题。"
+    }
+  },
+  {
+    "code": "300373",
+    "name": "**扬杰科技**",
+    "analysis_result": {
+      "code": "300373",
+      "name": "**扬杰科技**",
+      "should_exclude": false,
+      "reason": "",
+      "analysis": "公司业绩表现稳健，营收和净利润持续增长，经营现金流充裕，未出现明显业绩问题。"
+    }
+  },
+  {
+    "code": "300750",
+    "name": "**宁德时代**",
+    "analysis_result": {
+      "code": "300750",
+      "name": "**宁德时代**",
+      "should_exclude": false,
+      "reason": "",
+      "analysis": "公司在2024年营收有所回调，但核心盈利能力和现金流依然保持强劲增长，财务状况稳健，未出现显著业绩问题。"
+    }
+  },
+  {
+    "code": "601899",
+    "name": "**紫金矿业**",
+    "analysis_result": {
+      "code": "601899",
+      "name": "**紫金矿业**",
+      "should_exclude": false,
+      "reason": "",
+      "analysis": "公司业绩增长强劲且持续性好，各关键财务指标表现优异，虽然短期涨幅较大但有基本面支撑，未发现业绩问题或泡沫化风险。"
+    }
+  },
+  {
+    "code": "300274",
+    "name": "**阳光电源**",
+    "analysis_result": {
+      "code": "300274",
+      "name": "**阳光电源**",
+      "should_exclude": false,
+      "reason": "",
+      "analysis": "公司业绩持续高速增长，各项财务指标表现卓越，尽管股价涨幅巨大，但有坚实的基本面支撑，暂不排除。"
+    }
+  },
+  {
+    "code": "603920",
+    "name": "**世运电路**",
+    "analysis_result": {
+      "code": "603920",
+      "name": "**世运电路**",
+      "should_exclude": true,
+      "reason": "涨幅巨大接近泡沫",
+      "analysis": "公司股价在短期内涨幅巨大（超过150%），但经营现金流持续下滑，自由现金流长期为负且进一步恶化，盈利质量存疑，股价存在泡沫化风险。"
+    }
+  },
+  {
+    "code": "002733",
+    "name": "**雄韬股份**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "688772",
+    "name": "**珠海冠宇**",
+    "analysis_result": {
+      "code": "688772",
+      "name": "**珠海冠宇**",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司在2022年净利润曾大幅下滑，且资产负债率显著恶化，自由现金流持续为负，业绩出现过明显问题。"
+    }
+  },
+  {
+    "code": "003021",
+    "name": "**兆威机电**",
+    "analysis_result": {
+      "code": "003021",
+      "name": "**兆威机电**",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司经营现金流连续两年下滑，且自由现金流持续为负，表明其盈利质量存在问题，业绩出现明显风险点。"
+    }
+  }
+]
