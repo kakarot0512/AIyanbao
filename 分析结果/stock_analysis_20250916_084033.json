@@ -1,0 +1,86 @@
+[
+  {
+    "code": "300274",
+    "name": "**阳光电源**",
+    "analysis_result": {
+      "code": "300274",
+      "name": "**阳光电源**",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "该股票在过去半年内涨幅超过100%，价格波动剧烈，虽然公司财务表现持续增长，但如此巨大的短期涨幅存在较高的泡沫风险。"
+    }
+  },
+  {
+    "code": "002371",
+    "name": "**北方华创**",
+    "analysis_result": {
+      "code": "002371",
+      "name": "**北方华创**",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司在2021年和2022年连续两年出现经营现金流为负的情况，且2024年经营现金流较2023年有所下滑，表明公司在经营层面存在潜在风险。"
+    }
+  },
+  {
+    "code": "300373",
+    "name": "**扬杰科技**",
+    "analysis_result": {
+      "code": "300373",
+      "name": "**扬杰科技**",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司2023年出现收入几乎停滞、毛利率显著下滑、净利润同比下降的明显问题，尽管2024年有所恢复，但历史业绩波动较大，风险犹存。"
+    }
+  },
+  {
+    "code": "000100",
+    "name": "**TCL科技**",
+    "analysis_result": {
+      "code": "000100",
+      "name": "**TCL科技**",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司2024年营收出现下滑，毛利润和净利润经历大幅波动，且2024年净利润转为负值，显示公司近期业绩存在严重问题。"
+    }
+  },
+  {
+    "code": "300499",
+    "name": "**高澜股份**",
+    "analysis_result": {
+      "code": "300499",
+      "name": "**高澜股份**",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司2024年虽然营收和毛利润保持增长，但净利润和经营现金流出现显著下降，表明盈利质量和现金创造能力出现明显问题。"
+    }
+  },
+  {
+    "code": "300634",
+    "name": "**彩讯股份**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "601137",
+    "name": "**博威合金**",
+    "analysis_result": {
+      "code": "601137",
+      "name": "**博威合金**",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "公司在过去半年股价涨幅温和，财务报表显示收入、毛利润和净利润持续增长，经营现金流状况良好，未发现明显的业绩问题或过度炒作风险。"
+    }
+  },
+  {
+    "code": "002085",
+    "name": "**万丰奥威**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  }
+]
