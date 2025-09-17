@@ -1,0 +1,104 @@
+[
+  {
+    "code": "002371",
+    "name": "**北方华创**",
+    "analysis_result": {
+      "code": "002371",
+      "name": "北方华创",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "公司在过去几年实现了营收和净利润的持续高速增长，2023年经营现金流转正并在2024年保持正向，显示出良好的成长性和盈利能力，当前股价涨幅尚在合理区间。"
+    }
+  },
+  {
+    "code": "300811",
+    "name": "**铂科新材**",
+    "analysis_result": {
+      "code": "300811",
+      "name": "铂科新材",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "该股票在过去半年内涨幅巨大，且2023年营收增速明显放缓，2024年自由现金流持续为负且现金余额出现下降，显示出盈利质量和财务状况的潜在风险。"
+    }
+  },
+  {
+    "code": "603920",
+    "name": "**世运电路**",
+    "analysis_result": {
+      "code": "603920",
+      "name": "世运电路",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "该股票在过去半年内涨幅巨大，但2023年营收、毛利率和净利润增速均大幅放缓，2024年经营现金流和自由现金流出现显著下滑，表明公司业绩存在明显波动和风险。"
+    }
+  },
+  {
+    "code": "002074",
+    "name": "**国轩高科**",
+    "analysis_result": {
+      "code": "002074",
+      "name": "国轩高科",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "该股票在过去半年内涨幅巨大，且近年来营收增速显著放缓，净负债和总债务持续高企并快速增长，自由现金流多年来持续严重为负，表明公司存在严重的现金流和偿债风险。"
+    }
+  },
+  {
+    "code": "002085",
+    "name": "**万丰奥威**",
+    "analysis_result": {
+      "code": "002085",
+      "name": "万丰奥威",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司营收在2023年和2024年停滞不前，净利润连续两年下滑，2024年毛利率、经营现金流和自由现金流均出现大幅下降，显示出公司业绩显著恶化且存在持续性问题。"
+    }
+  },
+  {
+    "code": "603993",
+    "name": "**洛阳钼业**",
+    "analysis_result": {
+      "code": "603993",
+      "name": "洛阳钼业",
+      "should_exclude": true,
+      "reason": "涨幅巨大接近泡沫",
+      "analysis": "该股票在过去半年内股价涨幅超过70%，短期内呈现翻倍走势，结合其2024年财务报表中出现的异常强劲增长（如毛利润和自由现金流的巨幅跳升），存在市场过度炒作和估值泡沫化的风险。"
+    }
+  },
+  {
+    "code": "603338",
+    "name": "**浙江鼎力**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "002891",
+    "name": "**中宠股份**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "300274",
+    "name": "**阳光电源**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "002230",
+    "name": "**科大讯飞**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  }
+]
