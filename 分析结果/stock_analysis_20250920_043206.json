@@ -1,0 +1,95 @@
+[
+  {
+    "code": "300308",
+    "name": "**中际旭创**",
+    "analysis_result": {
+      "code": "300308",
+      "name": "中际旭创",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "近半年股价涨幅超过300%，估值存在泡沫风险，尽管公司2024年业绩表现强劲，收入和净利润大幅增长。"
+    }
+  },
+  {
+    "code": "002475",
+    "name": "**立讯精密**",
+    "analysis_result": {
+      "code": "002475",
+      "name": "立讯精密",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "公司业绩持续增长，现金流健康。近半年股价有明显涨幅，但未达到判断为泡沫的程度。"
+    }
+  },
+  {
+    "code": "002371",
+    "name": "**北方华创**",
+    "analysis_result": {
+      "code": "002371",
+      "name": "北方华创",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司2023年自由现金流出现明显负值，表明在投资和运营方面存在资金压力，尽管2024年有所恢复，但仍需对业绩波动保持谨慎。"
+    }
+  },
+  {
+    "code": "300450",
+    "name": "**先导智能**",
+    "analysis_result": {
+      "code": "300450",
+      "name": "先导智能",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司2023年和2024年收入、毛利率和净利润大幅下滑，经营和自由现金流持续为负且恶化，同时负债大幅增加，业绩出现明显问题。"
+    }
+  },
+  {
+    "code": "688111",
+    "name": "**金山办公**",
+    "analysis_result": {
+      "code": "688111",
+      "name": "金山办公",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "近半年股价涨幅超过400%，估值存在严重泡沫风险，尽管公司业绩持续健康增长，且现金流表现强劲。"
+    }
+  },
+  {
+    "code": "601689",
+    "name": "**拓普集团**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "603296",
+    "name": "**华勤技术**",
+    "analysis_result": {
+      "code": "603296",
+      "name": "华勤技术",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "公司自由现金流在2021-2022年连续大幅为负，2023年虽转正但2024年再次转负，且2024年经营现金流显著下滑，同时负债持续增加，现金流健康状况存在明显问题。"
+    }
+  },
+  {
+    "code": "002156",
+    "name": "**通富微电**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "603596",
+    "name": "**伯特利**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  }
+]
