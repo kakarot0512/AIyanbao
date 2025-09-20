@@ -1,0 +1,97 @@
+[
+  {
+    "code": "300308",
+    "name": "**中际旭创**",
+    "analysis_result": {
+      "code": "300308",
+      "name": "中际旭创",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "近半年股价涨幅超过300%，当前市盈率高达91倍，估值存在严重泡沫风险，尽管2024年业绩表现强劲增长。"
+    }
+  },
+  {
+    "code": "002371",
+    "name": "**北方华创**",
+    "analysis_result": {
+      "code": "002371",
+      "name": "北方华创",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "近半年股价上涨25%，市盈率达51倍，公司2024年自由现金流再度转负，高估值下存在炒作风险。"
+    }
+  },
+  {
+    "code": "002475",
+    "name": "**立讯精密**",
+    "analysis_result": {
+      "code": "002475",
+      "name": "立讯精密",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "近半年股价上涨36.8%，市盈率接近30倍，且毛利率增速放缓，存在因市场过度乐观导致估值过高的风险。"
+    }
+  },
+  {
+    "code": "300450",
+    "name": "**先导智能**",
+    "analysis_result": {
+      "code": "300450",
+      "name": "先导智能",
+      "should_exclude": true,
+      "reason": "近期明显下跌走势",
+      "analysis": "2024年营收、毛利和净利润大幅下滑，资产负债情况恶化，自由现金流持续为负且进一步恶化，业绩存在严重问题。"
+    }
+  },
+  {
+    "code": "601689",
+    "name": "**拓普集团**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "002156",
+    "name": "**通富微电**",
+    "analysis_result": {
+      "code": "002156",
+      "name": "通富微电",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "近半年股价上涨21.4%，市盈率高达76倍，公司2022-2023年净利润大幅下滑，且长期自由现金流为负，负债率较高，存在业绩和估值双重风险。"
+    }
+  },
+  {
+    "code": "603596",
+    "name": "**伯特利**",
+    "analysis_result": {
+      "code": "603596",
+      "name": "伯特利",
+      "should_exclude": false,
+      "reason": null,
+      "analysis": "近半年股价下跌17.6%，公司营收和净利润持续增长，财务状况稳健，自由现金流在2024年恢复正向，未见明显风险。"
+    }
+  },
+  {
+    "code": "601137",
+    "name": "**博威合金**",
+    "analysis_result": {
+      "code": "601137",
+      "name": "中兴通讯",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "近半年股价上涨21.4%，但2024年营收、毛利、净利润、现金及现金流均出现明显下滑，基本面恶化，高估值下存在泡沫风险。"
+    }
+  },
+  {
+    "code": "000063",
+    "name": "**中兴通讯**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  }
+]
