@@ -1,0 +1,97 @@
+[
+  {
+    "code": "002371",
+    "name": "**北方华创**",
+    "analysis_result": {
+      "code": "002371",
+      "name": "北方华创",
+      "should_exclude": false,
+      "reason": "",
+      "analysis": "公司营收、净利润持续高增长，经营性现金流改善，负债合理，股价上涨有良好业绩支撑。"
+    }
+  },
+  {
+    "code": "601899",
+    "name": "**紫金矿业**",
+    "analysis_result": {
+      "code": "601899",
+      "name": "紫金矿业",
+      "should_exclude": false,
+      "reason": "",
+      "analysis": "公司业绩持续强劲增长，特别是自由现金流大幅提升，良好基本面支撑股价上涨。"
+    }
+  },
+  {
+    "code": "002475",
+    "name": "**立讯精密**",
+    "analysis_result": {
+      "code": "002475",
+      "name": "立讯精密",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "股价在半年内涨幅近50%，但毛利率增速放缓且总负债加速扩张，存在估值过高风险。"
+    }
+  },
+  {
+    "code": "300308",
+    "name": "**中际旭创**",
+    "analysis_result": {
+      "code": "300308",
+      "name": "中际旭创",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "股价在半年内飙升近300%，即便业绩亮眼也存在过度炒作和泡沫风险。"
+    }
+  },
+  {
+    "code": "601689",
+    "name": "**拓普集团**",
+    "analysis_result": {
+      "code": "601689",
+      "name": "拓普集团",
+      "should_exclude": false,
+      "reason": "",
+      "analysis": "公司基本面持续向好，营收和利润高速增长，净负债结构优化，高额资本开支反映其扩张态势。"
+    }
+  },
+  {
+    "code": "002156",
+    "name": "**通富微电**",
+    "analysis_result": {
+      "code": "002156",
+      "name": "通富微电",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "公司盈利能力和财务健康状况显著恶化，营收增速放缓，净利润大幅下滑，营运资金持续恶化且自由现金流为负，短期股价上涨难以持续。"
+    }
+  },
+  {
+    "code": "300450",
+    "name": "**先导智能**",
+    "analysis_result": {
+      "code": "300450",
+      "name": "先导智能",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "公司核心财务指标在2024年出现严重下滑，但股价在半年内仍飙升超160%，存在严重泡沫风险。"
+    }
+  },
+  {
+    "code": "600392",
+    "name": "**盛和资源**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "002444",
+    "name": "**巨星科技**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  }
+]
