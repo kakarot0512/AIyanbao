@@ -1,0 +1,106 @@
+[
+  {
+    "code": "002463",
+    "name": "**沪电股份**",
+    "analysis_result": {
+      "code": "002463",
+      "name": "沪电股份",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "沪电股份近半年股价涨幅高达127%，短期内存在明显的泡沫风险。尽管公司财务业绩表现强劲且持续增长，但股价的巨大涨幅已使其估值可能过高。"
+    }
+  },
+  {
+    "code": "688012",
+    "name": "**中微公司**",
+    "analysis_result": {
+      "code": "688012",
+      "name": "中微公司",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "中微公司近半年股价涨幅显著，但2023年经营现金流和自由现金流大幅转负，且2024年净利润和每股收益环比下降，表明其业绩存在明显问题。"
+    }
+  },
+  {
+    "code": "000878",
+    "name": "**云南铜业**",
+    "analysis_result": {
+      "code": "000878",
+      "name": "云南铜业",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "云南铜业近半年股价上涨，但公司毛利润和净利润自2022年持续下滑，2024年经营现金流和自由现金流大幅转负，业绩存在严重问题。"
+    }
+  },
+  {
+    "code": "300475",
+    "name": "**香农芯创**",
+    "analysis_result": {
+      "code": "300475",
+      "name": "香农芯创",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "香农芯创近半年股价飙升145%，存在严重泡沫风险。同时，公司经营和自由现金流极度不稳定，且2024年净利润大幅下滑，业绩表现不佳。"
+    }
+  },
+  {
+    "code": "603337",
+    "name": "**杰克科技**",
+    "analysis_result": {
+      "code": "603337",
+      "name": "杰克科技",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "杰克科技近半年股价上涨，但公司2023年净利润和每股收益显著下滑，自由现金流在2023年转负，显示其业绩存在波动和问题。"
+    }
+  },
+  {
+    "code": "003021",
+    "name": "**兆威机电**",
+    "analysis_result": {
+      "code": "003021",
+      "name": "兆威机电",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "兆威机电近半年股价涨幅温和，但其经营现金流持续下滑，且自由现金流连续四年为负，表明公司盈利质量存疑，未能通过核心业务产生充足现金流。"
+    }
+  },
+  {
+    "code": "688516",
+    "name": "**奥特维**",
+    "analysis_result": {
+      "code": "688516",
+      "name": "奥特维",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "奥特维近半年股价下跌，但其营收自2021年持续下滑，经营和自由现金流波动剧烈且多次为负，公司核心业务存在显著问题。"
+    }
+  },
+  {
+    "code": "300679",
+    "name": "**电连技术**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "300684",
+    "name": "**中石科技**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "002028",
+    "name": "**思源电气**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  }
+]
