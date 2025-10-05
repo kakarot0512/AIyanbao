@@ -1,0 +1,108 @@
+[
+  {
+    "code": "688012",
+    "name": "**中微公司**",
+    "analysis_result": {
+      "code": "688012",
+      "name": "中微公司",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "近半年股价涨幅较大（约62.44%），且2023年出现明显的经营现金流和自由现金流负值，表明公司业绩曾出现显著问题。"
+    }
+  },
+  {
+    "code": "002463",
+    "name": "**沪电股份**",
+    "analysis_result": {
+      "code": "002463",
+      "name": "沪电股份",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "近半年股价涨幅高达127.6%，存在严重的炒作和泡沫风险。"
+    }
+  },
+  {
+    "code": "002028",
+    "name": "**思源电气**",
+    "analysis_result": {
+      "code": "002028",
+      "name": "思源电气",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "近半年股价涨幅显著（约44.42%），且2021年自由现金流为负，2022年毛利率出现明显下滑，表明公司业绩曾出现问题。"
+    }
+  },
+  {
+    "code": "000878",
+    "name": "**云南铜业**",
+    "analysis_result": {
+      "code": "000878",
+      "name": "云南铜业",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "2024年毛利率大幅下滑，经营现金流和自由现金流断崖式下跌并转为巨额负值，业绩出现明显问题。"
+    }
+  },
+  {
+    "code": "603337",
+    "name": "**杰克股份**",
+    "analysis_result": {
+      "code": "603337",
+      "name": "杰克股份",
+      "should_exclude": true,
+      "reason": "涨幅巨大，炒作接近泡沫",
+      "analysis": "近半年股价涨幅达48.56%，存在炒作接近泡沫的风险，尽管公司2024年业绩表现强劲反弹。"
+    }
+  },
+  {
+    "code": "300684",
+    "name": "**中石科技**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "003021",
+    "name": "**兆威机电**",
+    "analysis_result": {
+      "code": "003021",
+      "name": "兆威机电",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "近四年自由现金流持续为负，且2024年经营现金流显著下滑，表明公司业绩存在明显问题。"
+    }
+  },
+  {
+    "code": "688208",
+    "name": "**道通科技**",
+    "analysis_result": {
+      "code": "688208",
+      "name": "道通科技",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "2021年和2022年经营现金流和自由现金流为巨额负值，2022年净利润亏损，业绩存在明显问题。"
+    }
+  },
+  {
+    "code": "688213",
+    "name": "**思特威**",
+    "analysis_result": {
+      "should_exclude": true,
+      "reason": "分析失败",
+      "analysis": "未能从AI获取对此股票的有效分析。请检查日志中AI的原始响应。"
+    }
+  },
+  {
+    "code": "000887",
+    "name": "**中鼎股份**",
+    "analysis_result": {
+      "code": "000887",
+      "name": "中鼎股份",
+      "should_exclude": true,
+      "reason": "业绩出现过明显问题",
+      "analysis": "近半年股价涨幅达31.00%，且2022年自由现金流为负，毛利率也出现下滑，表明公司业绩曾出现过问题。"
+    }
+  }
+]
